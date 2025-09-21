@@ -46,11 +46,13 @@ class _InicioState extends State<Inicio> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Drawer(
+        //Este es el drawer que se desliza en la izquierda xd
         child: Container(
           color: const Color.fromARGB(255, 9, 12, 14),
           child: Column(
             children: [
               Container(
+                //Este es el logo de arriba del drawer
                 width: 50,
                 height: 50,
                 margin: const EdgeInsets.only(top: 20, bottom: 20),
@@ -59,6 +61,7 @@ class _InicioState extends State<Inicio> {
                 ),
               ),
               Text(
+                //Este nomas es el texto abajo del logo
                 "SDLG",
                 style: TextStyle(
                   color: Colors.white,
@@ -66,7 +69,10 @@ class _InicioState extends State<Inicio> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
+              //Acá empiezan lo q serán los botones del drawer (PERO AÚN NO HACEN NADA, SON PURO TEXTO)*****************************
               Container(
+                //Este es el primer contenedor (inicio) pero aún no hace nada pq nomás es el texto
                 margin: const EdgeInsets.only(top: 20),
                 padding: const EdgeInsets.all(20),
                 color: const Color.fromARGB(255, 41, 66, 87),
@@ -76,7 +82,9 @@ class _InicioState extends State<Inicio> {
                   style: TextStyle(color: Colors.white),
                 ),
               ),
+
               Container(
+                //este es el segundo contenedor (becerros)
                 margin: const EdgeInsets.only(top: 5),
                 padding: const EdgeInsets.all(20),
                 color: const Color.fromARGB(255, 41, 66, 87),
@@ -86,7 +94,9 @@ class _InicioState extends State<Inicio> {
                   style: TextStyle(color: Colors.white),
                 ),
               ),
+
               Container(
+                //este es el tercer contenedor (animales)
                 margin: const EdgeInsets.only(top: 5),
                 padding: const EdgeInsets.all(20),
                 color: const Color.fromARGB(255, 41, 66, 87),
@@ -96,7 +106,9 @@ class _InicioState extends State<Inicio> {
                   style: TextStyle(color: Colors.white),
                 ),
               ),
+
               Container(
+                //este es el cuarto contenedor (corrales)
                 margin: const EdgeInsets.only(top: 5),
                 padding: const EdgeInsets.all(20),
                 color: const Color.fromARGB(255, 41, 66, 87),
@@ -106,7 +118,9 @@ class _InicioState extends State<Inicio> {
                   style: TextStyle(color: Colors.white),
                 ),
               ),
+
               Container(
+                //este es el quinto contenedor (propietarios)
                 margin: const EdgeInsets.only(top: 5),
                 padding: const EdgeInsets.all(20),
                 color: const Color.fromARGB(255, 41, 66, 87),
@@ -116,10 +130,15 @@ class _InicioState extends State<Inicio> {
                   style: TextStyle(color: Colors.white),
                 ),
               ),
-              Expanded(child: Container()),
+
+              //Este sería el último botón ?? por lo pronto es el de cerrar sesión pero no se si agregar uno arriba que diga "regresar" o algo así
+              Expanded(
+                child: Container(),
+              ), //tiene la propiedad expanded para que se vaya hasta abajo lol
+
               Container(
                 padding: const EdgeInsets.all(20),
-                color: const Color.fromARGB(255, 13, 14, 15),
+                color: const Color.fromARGB(255, 57, 63, 68),
                 width: double.infinity,
                 alignment: Alignment.center,
                 child: const Text(
@@ -127,38 +146,48 @@ class _InicioState extends State<Inicio> {
                   style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                 ),
               ),
-            ],
+            ], //fin de children
           ),
         ),
       ),
-      appBar: AppBar(title: const Text("SDLG")),
 
-      body:
+      appBar: AppBar(
+        title: const Text("SDLG"),
+      ), //este no se q sea la vdd ajhasajs
+
+      body: //Aqui está el body de toda la app xd
           _paginas[_pagActual], //se llama la pagina segun a cual se le haga tap
 
       bottomNavigationBar: BottomNavigationBar(
+        //Esta es la barra de botones inferior
         onTap: (index) {
-          //Al hacer tap, se cambiará el color del index seleccionado
+          //Al hacer tap, se cambiará a la página correspondiente
           setState(() {
             _pagActual = index;
           });
         },
-        currentIndex: _pagActual,
+        currentIndex: _pagActual, //este indica el index actual
+
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Inicio",
+          ), //Boton de inicio
+
           BottomNavigationBarItem(
             icon: Icon(
               Symbols.pediatrics,
               weight: 700,
             ), // el weight va desde 100 a 700 (delgado a ancho) en grosor del icono
             label: "Becerros",
-          ),
+          ), //Boton de becerros
+
           BottomNavigationBarItem(
             icon: FaIcon(FontAwesomeIcons.cow),
             label: "Animales",
-          ),
+          ), //Boton de animales
         ],
-      ),
+      ), //Acá termina el bottom navigation bar
     );
   }
 }
