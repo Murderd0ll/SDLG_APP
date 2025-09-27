@@ -38,8 +38,8 @@ class _InicioState extends State<Inicio> {
   List<Widget> _paginas = [
     PagInicio(),
     PagBecerros(),
-    Paganimales(),
-    Pagpropietarios(),
+    PagAnimales(),
+    PagPropietarios(),
   ];
 
   @override

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-class Paganimales extends StatelessWidget {
+class PagAnimales extends StatelessWidget {
   //clase para la página de animales
-  const Paganimales({super.key});
+  const PagAnimales({super.key});
 
   @override
   Widget build(BuildContext context) {
