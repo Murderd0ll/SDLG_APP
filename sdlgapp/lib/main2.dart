@@ -19,7 +19,13 @@ class SDLGAPP extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primarySwatch: Colors.indigo,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color.fromARGB(255, 27, 26, 34),
+          foregroundColor: Colors.white,
+        ),
+      ),
       title: "SDLG",
       home: Inicio(),
     );
