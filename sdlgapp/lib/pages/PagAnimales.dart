@@ -6,35 +6,7 @@ class PagAnimales extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Table(
-        border: TableBorder.symmetric(
-          inside: BorderSide(
-            width: 1,
-            color: const Color.fromARGB(255, 56, 56, 56),
-          ),
-        ),
-        children: [
-          TableRow(
-            children: [Text(' Sexo'), Text(' Arete'), Text(' F. Nacimiento')],
-          ),
-          TableRow(
-            children: [
-              Text('Row 1, Col 1'),
-              Text('Row 1, Col 2'),
-              Text('Row 1, Col 3'),
-            ],
-          ),
-          TableRow(
-            children: [
-              Text('Row 2, Col 1'),
-              Text('Row 2, Col 2'),
-              Text('Row 2, Col 3'),
-            ],
-          ),
-        ],
-      ),
-    );
+    return Scaffold(body: Center(child: Text("Página de Animales")));
     // falta un cuadro de busqueda y un botón para agregar nuevos
   }
 }
