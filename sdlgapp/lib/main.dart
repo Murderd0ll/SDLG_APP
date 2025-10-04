@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 //Importación de las páginas del bottom navigation bar
 import 'package:sdlgapp/pages/PagAnimales.dart';
 import 'package:sdlgapp/pages/PagBecerros.dart';
+import 'package:sdlgapp/pages/PagCorrales.dart';
 import 'package:sdlgapp/pages/PagInicio.dart';
 import 'package:sdlgapp/pages/PagPropietarios.dart';
+import 'package:sdlgapp/pages/db_helper.dart';
 
-void main() => runApp(SDLGAPP());
+void main() {
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+  runApp(SDLGAPP());
+}
 
 class SDLGAPP extends StatelessWidget {
   const SDLGAPP({super.key});
@@ -33,161 +40,215 @@ class Inicio extends StatefulWidget {
 }
 
 class _InicioState extends State<Inicio> {
+  List<Map<String, dynamic>> _allData = [];
+  bool _isLoading = true;
+
+  //obtener los datos de la base de datos
+  void _refreshData() async {
+    final data = await SQLHelper.getAllData();
+    setState(() {
+      _allData = data;
+      _isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshData(); // Carga los datos cuando la aplicación inicia
+  }
+
+  //agregar datos
+  Future<void> _addData() async {
+    await SQLHelper.createData(
+      _titleController.text,
+      _descriptionController.text,
+    );
+    _refreshData();
+  }
+
+  //editar datos
+  Future<void> _updateData(int id) async {
+    await SQLHelper.updateData(
+      id,
+      _titleController.text,
+      _descriptionController.text,
+    );
+    _refreshData();
+  }
+
+  //borrar datos
+  void _deleteData(int id) async {
+    await SQLHelper.deleteData(id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        backgroundColor: Color.fromARGB(255, 237, 218, 183),
+        content: Text('Se eliminó el registro'),
+      ),
+    );
+    _refreshData();
+  }
+
+  //controladores para los text fields
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+
+  //lógica del drawer y del bottom navigation bar
   int _pagActual = 0;
+  int _bottomNavIndex = 0; // Índice separado para el BottomNavigationBar
 
   List<Widget> _paginas = [
     PagInicio(),
     PagBecerros(),
     PagAnimales(),
     PagPropietarios(),
+    PagCorrales(),
   ];
 
+  //Función para cambiar de página desde el drawer
+  void _cambiarPaginaDesdeDrawer(int nuevaPagina) {
+    setState(() {
+      _pagActual = nuevaPagina;
+      // Solo actualiza el bottom nav index si la página está en el bottom nav
+      if (nuevaPagina < 3) {
+        _bottomNavIndex = nuevaPagina;
+      }
+    });
+    Navigator.pop(context);
+  }
+
+  //función para cambiar de página desde el bottom navigation bar
+  void _cambiarPaginaDesdeBottomNav(int index) {
+    setState(() {
+      _pagActual = index;
+      _bottomNavIndex = index;
+    });
+  }
+
+  //estructura del scaffold (toda la app xd)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Drawer(
-        //Este es el drawer que se desliza en la izquierda xd
-        child: Container(
-          color: const Color.fromARGB(255, 9, 12, 14),
-          child: Column(
-            children: [
-              Container(
-                //Este es el logo de arriba del drawer
-                width: 50,
-                height: 50,
-                margin: const EdgeInsets.only(top: 20, bottom: 20),
-                child: Image.network(
-                  "https://img.freepik.com/vector-gratis/vector-diseno-degradado-colorido-pajaro_343694-2506.jpg?semt=ais_incoming&w=740&q=80",
+        backgroundColor: const Color.fromARGB(255, 9, 12, 14),
+        child: ListView(
+          children: [
+            SizedBox(
+              height: 70,
+              child: DrawerHeader(
+                decoration: const BoxDecoration(
+                  color: Color.fromARGB(255, 27, 26, 34),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    const Text(
+                      'SDLG',
+                      style: TextStyle(color: Colors.white, fontSize: 24),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                //Este nomas es el texto abajo del logo
-                "SDLG",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              //Acá empiezan lo q serán los botones del drawer (PERO AÚN NO HACEN NADA, SON PURO TEXTO)*****************************
-              Container(
-                //Este es el primer contenedor (inicio) pero aún no hace nada pq nomás es el texto
-                margin: const EdgeInsets.only(top: 20),
-                padding: const EdgeInsets.all(20),
-                color: const Color.fromARGB(255, 41, 66, 87),
-                width: double.infinity,
-                child: const Text(
-                  "Inicio",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-
-              Container(
-                //este es el segundo contenedor (becerros)
-                margin: const EdgeInsets.only(top: 5),
-                padding: const EdgeInsets.all(20),
-                color: const Color.fromARGB(255, 41, 66, 87),
-                width: double.infinity,
-                child: const Text(
-                  "Becerros",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-
-              Container(
-                //este es el tercer contenedor (animales)
-                margin: const EdgeInsets.only(top: 5),
-                padding: const EdgeInsets.all(20),
-                color: const Color.fromARGB(255, 41, 66, 87),
-                width: double.infinity,
-                child: const Text(
-                  "Animales",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-
-              Container(
-                //este es el cuarto contenedor (corrales)
-                margin: const EdgeInsets.only(top: 5),
-                padding: const EdgeInsets.all(20),
-                color: const Color.fromARGB(255, 41, 66, 87),
-                width: double.infinity,
-                child: const Text(
-                  "Corrales",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-
-              Container(
-                //este es el quinto contenedor (propietarios)
-                margin: const EdgeInsets.only(top: 5),
-                padding: const EdgeInsets.all(20),
-                color: const Color.fromARGB(255, 41, 66, 87),
-                width: double.infinity,
-                child: const Text(
-                  "Propietarios",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-
-              //Este sería el último botón ?? por lo pronto es el de cerrar sesión pero no se si agregar uno arriba que diga "regresar" o algo así
-              Expanded(
-                child: Container(),
-              ), //tiene la propiedad expanded para que se vaya hasta abajo lol
-
-              Container(
-                padding: const EdgeInsets.all(20),
-                color: const Color.fromARGB(255, 57, 63, 68),
-                width: double.infinity,
-                alignment: Alignment.center,
-                child: const Text(
-                  "Cerrar sesión",
-                  style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
-                ),
-              ),
-            ], //fin de children
-          ),
+            ),
+            ListTile(
+              iconColor: Color.fromARGB(255, 255, 255, 255),
+              textColor: Colors.white,
+              leading: Icon(Icons.home),
+              title: const Text('Inicio'),
+              onTap: () => _cambiarPaginaDesdeDrawer(0),
+            ),
+            ListTile(
+              iconColor: Colors.white,
+              textColor: Colors.white,
+              leading: Icon(Symbols.pediatrics, weight: 700),
+              title: const Text('Becerros'),
+              onTap: () => _cambiarPaginaDesdeDrawer(1),
+            ),
+            ListTile(
+              iconColor: Colors.white,
+              textColor: Colors.white,
+              leading: FaIcon(FontAwesomeIcons.cow),
+              title: const Text('Animales'),
+              onTap: () => _cambiarPaginaDesdeDrawer(2),
+            ),
+            ListTile(
+              iconColor: Colors.white,
+              textColor: Colors.white,
+              leading: Icon(Icons.person),
+              title: const Text('Propietarios'),
+              onTap: () => _cambiarPaginaDesdeDrawer(3),
+            ),
+            ListTile(
+              iconColor: Colors.white,
+              textColor: Colors.white,
+              leading: Icon(Icons.fence),
+              title: const Text('Corrales'),
+              onTap: () => _cambiarPaginaDesdeDrawer(4),
+            ),
+            const Divider(color: Colors.white70),
+            ListTile(
+              iconColor: Colors.white,
+              textColor: Colors.white,
+              leading: Icon(Icons.exit_to_app),
+              title: const Text('Salir'),
+              onTap: () => SystemNavigator.pop(),
+            ),
+          ],
         ),
       ),
 
       appBar: AppBar(
-        title: const Text("SDLG"),
-      ), //este no se q sea la vdd ajhasajs
+        backgroundColor: const Color.fromARGB(255, 27, 26, 34),
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+        toolbarHeight: 60,
+        title: Text(
+          _getAppBarTitle(_pagActual),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
 
-      body: //Aqui está el body de toda la app xd
-          _paginas[_pagActual], //se llama la pagina segun a cual se le haga tap
+      body: _paginas[_pagActual],
 
       bottomNavigationBar: BottomNavigationBar(
-        //Esta es la barra de botones inferior
-        onTap: (index) {
-          //Al hacer tap, se cambiará a la página correspondiente
-          setState(() {
-            _pagActual = index;
-          });
-        },
-        currentIndex: _pagActual, //este indica el index actual
-
+        selectedItemColor: const Color.fromARGB(255, 60, 51, 223),
+        unselectedItemColor: Colors.grey,
+        onTap: _cambiarPaginaDesdeBottomNav,
+        currentIndex: _bottomNavIndex, // Usa el índice separado
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Inicio",
-          ), //Boton de inicio
-
-          BottomNavigationBarItem(
-            icon: Icon(
-              Symbols.pediatrics,
-              weight: 700,
-            ), // el weight va desde 100 a 700 (delgado a ancho) en grosor del icono
+            icon: Icon(Symbols.pediatrics),
             label: "Becerros",
-          ), //Boton de becerros
-
+          ),
           BottomNavigationBarItem(
             icon: FaIcon(FontAwesomeIcons.cow),
             label: "Animales",
-          ), //Boton de animales
+          ),
         ],
-      ), //Acá termina el bottom navigation bar
+      ),
     );
+  }
+
+  String _getAppBarTitle(int pagActual) {
+    switch (pagActual) {
+      case 0:
+        return 'Inicio';
+      case 1:
+        return 'Becerros';
+      case 2:
+        return 'Animales';
+      case 3:
+        return 'Propietarios';
+      case 4:
+        return 'Corrales';
+      default:
+        return 'SDLG';
+    }
   }
 }
