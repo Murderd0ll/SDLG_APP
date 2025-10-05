@@ -40,153 +40,80 @@ class Inicio extends StatefulWidget {
 }
 
 class _InicioState extends State<Inicio> {
-  // Datos para cada página
-  List<Map<String, dynamic>> _animalesData = [];
-  List<Map<String, dynamic>> _becerrosData = [];
-  List<Map<String, dynamic>> _propietariosData = [];
-  List<Map<String, dynamic>> _corralesData = [];
-
+  List<Map<String, dynamic>> _allData = [];
   bool _isLoading = true;
+
+  //obtener los datos de la base de datos
+  void _refreshData() async {
+    final data = await SQLHelper.getAllData();
+    setState(() {
+      _allData = data;
+      _isLoading = false;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _refreshData(); // Carga los datos cuando la aplicación inicia
   }
 
-  void _initializeApp() async {
-    // SOLO EJECUTAR ESTO UNA VEZ - LUEGO COMENTAR
-    print("=== INICIALIZANDO BASE DE DATOS ===");
-    await SQLHelper.resetDatabase(); // ⚠️ COMENTAR ESTA LÍNEA DESPUÉS DE LA PRIMERA EJECUCIÓN
-    print("=== BASE DE DATOS REINICIADA ===");
-
-    // Verificar el estado de la base de datos
-    await SQLHelper.debugDatabaseStatus();
-
-    // Cargar datos de la página actual
-    _cargarDatosPagina(_pagActual);
-  }
-
-  // Métodos para cargar datos específicos
-  void _refreshAnimales() async {
-    final data = await SQLHelper.getAllAnimales();
-    setState(() {
-      _animalesData = data;
-      _isLoading = false;
-    });
-  }
-
-  void _refreshBecerros() async {
-    final data = await SQLHelper.getAllBecerros();
-    setState(() {
-      _becerrosData = data;
-      _isLoading = false;
-    });
-  }
-
-  void _refreshPropietarios() async {
-    final data = await SQLHelper.getAllPropietarios();
-    setState(() {
-      _propietariosData = data;
-      _isLoading = false;
-    });
-  }
-
-  void _refreshCorrales() async {
-    final data = await SQLHelper.getAllCorrales();
-    setState(() {
-      _corralesData = data;
-      _isLoading = false;
-    });
-  }
-
-  // Cargar datos cuando cambia la página
-  void _cargarDatosPagina(int pagina) {
-    switch (pagina) {
-      case 2: // Animales
-        _refreshAnimales();
-        break;
-      case 1: // Becerros
-        _refreshBecerros();
-        break;
-      case 3: // Propietarios
-        _refreshPropietarios();
-        break;
-      case 4: // Corrales
-        _refreshCorrales();
-        break;
-      default:
-        setState(() {
-          _isLoading = false;
-        });
-        break;
-    }
-  }
-
-  // Función para mostrar diálogo de confirmación de salida
-  void _showExitConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Cerrar aplicación'),
-          content: Text('¿Estás seguro de que quieres salir de la aplicación?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Cierra el diálogo
-                SystemNavigator.pop(); // Cierra la aplicación
-              },
-              child: Text('Salir', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
+  //agregar datos
+  Future<void> _addData() async {
+    await SQLHelper.createData(
+      _titleController.text,
+      _descriptionController.text,
     );
+    _refreshData();
   }
+
+  //editar datos
+  Future<void> _updateData(int id) async {
+    await SQLHelper.updateData(
+      id,
+      _titleController.text,
+      _descriptionController.text,
+    );
+    _refreshData();
+  }
+
+  //borrar datos
+  void _deleteData(int id) async {
+    await SQLHelper.deleteData(id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        backgroundColor: Color.fromARGB(255, 237, 218, 183),
+        content: Text('Se eliminó el registro'),
+      ),
+    );
+    _refreshData();
+  }
+
+  //controladores para los text fields
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
   //lógica del drawer y del bottom navigation bar
   int _pagActual = 0;
-  int _bottomNavIndex = 0;
+  int _bottomNavIndex = 0; // Índice separado para el BottomNavigationBar
 
-  // Lista de páginas con datos pasados como parámetros
-  List<Widget> get _paginas => [
+  List<Widget> _paginas = [
     PagInicio(),
-    PagBecerros(
-      // data: _becerrosData,
-      //onRefresh: _refreshBecerros,
-      //isLoading: _isLoading,
-    ),
-    PagAnimales(
-      data: _animalesData,
-      onRefresh: _refreshAnimales,
-      isLoading: _isLoading,
-    ),
-    PagPropietarios(
-      // data: _propietariosData,
-      // onRefresh: _refreshPropietarios,
-      // isLoading: _isLoading,
-    ),
-    PagCorrales(
-      //data: _corralesData,
-      //onRefresh: _refreshCorrales,
-      //isLoading: _isLoading,
-    ),
+    PagBecerros(),
+    PagAnimales(),
+    PagPropietarios(),
+    PagCorrales(),
   ];
 
   //Función para cambiar de página desde el drawer
   void _cambiarPaginaDesdeDrawer(int nuevaPagina) {
     setState(() {
       _pagActual = nuevaPagina;
+      // Solo actualiza el bottom nav index si la página está en el bottom nav
       if (nuevaPagina < 3) {
         _bottomNavIndex = nuevaPagina;
       }
     });
-    _cargarDatosPagina(nuevaPagina);
     Navigator.pop(context);
   }
 
@@ -196,9 +123,9 @@ class _InicioState extends State<Inicio> {
       _pagActual = index;
       _bottomNavIndex = index;
     });
-    _cargarDatosPagina(index);
   }
 
+  //estructura del scaffold (toda la app xd)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -269,10 +196,7 @@ class _InicioState extends State<Inicio> {
               textColor: Colors.white,
               leading: Icon(Icons.exit_to_app),
               title: const Text('Salir'),
-              onTap: () {
-                Navigator.pop(context);
-                _showExitConfirmation(context);
-              },
+              onTap: () => SystemNavigator.pop(),
             ),
           ],
         ),
@@ -295,7 +219,7 @@ class _InicioState extends State<Inicio> {
         selectedItemColor: const Color.fromARGB(255, 60, 51, 223),
         unselectedItemColor: Colors.grey,
         onTap: _cambiarPaginaDesdeBottomNav,
-        currentIndex: _bottomNavIndex,
+        currentIndex: _bottomNavIndex, // Usa el índice separado
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Inicio"),
           BottomNavigationBarItem(
