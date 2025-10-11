@@ -57,7 +57,7 @@ class _InicioState extends State<Inicio> {
   void _initializeApp() async {
     // SOLO EJECUTAR ESTO UNA VEZ - LUEGO COMENTAR
     print("=== INICIALIZANDO BASE DE DATOS ===");
-    await SQLHelper.resetDatabase(); // ⚠️ COMENTAR ESTA LÍNEA DESPUÉS DE LA PRIMERA EJECUCIÓN
+    //await SQLHelper.resetDatabase(); // ⚠️ COMENTAR ESTA LÍNEA DESPUÉS DE LA PRIMERA EJECUCIÓN
     print("=== BASE DE DATOS REINICIADA ===");
 
     // Verificar el estado de la base de datos
@@ -157,9 +157,9 @@ class _InicioState extends State<Inicio> {
   List<Widget> get _paginas => [
     PagInicio(),
     PagBecerros(
-      // data: _becerrosData,
-      //onRefresh: _refreshBecerros,
-      //isLoading: _isLoading,
+      data: _becerrosData,
+      onRefresh: _refreshBecerros,
+      isLoading: _isLoading,
     ),
     PagAnimales(
       data: _animalesData,
@@ -167,14 +167,14 @@ class _InicioState extends State<Inicio> {
       isLoading: _isLoading,
     ),
     PagPropietarios(
-      // data: _propietariosData,
-      // onRefresh: _refreshPropietarios,
-      // isLoading: _isLoading,
+      data: _propietariosData,
+      onRefresh: _refreshPropietarios,
+      isLoading: _isLoading,
     ),
     PagCorrales(
-      //data: _corralesData,
-      //onRefresh: _refreshCorrales,
-      //isLoading: _isLoading,
+      data: _corralesData,
+      onRefresh: _refreshCorrales,
+      isLoading: _isLoading,
     ),
   ];
 
