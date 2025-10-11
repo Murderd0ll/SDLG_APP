@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
+import 'package:sdlgapp/services/image_service.dart';
 
 class PagAnimales extends StatelessWidget {
   final List<Map<String, dynamic>> data;
@@ -48,8 +51,6 @@ class PagAnimales extends StatelessWidget {
                             ),
                           ];
                         }
-
-                        // Búsqueda en tiempo real en la base de datos
                         return _buildSearchSuggestions(controller.text);
                       },
                 ),
@@ -107,46 +108,55 @@ class PagAnimales extends StatelessWidget {
       padding: EdgeInsets.all(16),
       itemCount: data.length,
       itemBuilder: (context, index) {
-        final animal = data[index];
-        return _buildAnimalCard(animal, context);
+        final tganado = data[index];
+        return _buildAnimalCard(tganado, context);
       },
     );
   }
 
-  Widget _buildAnimalCard(Map<String, dynamic> animal, BuildContext context) {
+  Widget _buildAnimalCard(Map<String, dynamic> tganado, BuildContext context) {
+    final imagePath = tganado['fotogdo']?.toString();
+
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       elevation: 2,
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: const Color.fromARGB(
-            255,
-            182,
-            128,
-            128,
-          ).withOpacity(0.2),
-          child: Icon(
-            Icons.pets,
-            color: const Color.fromARGB(255, 137, 77, 77),
-          ),
-        ),
+        leading: imagePath != null && imagePath.isNotEmpty
+            ? CircleAvatar(
+                radius: 25,
+                backgroundImage: FileImage(File(imagePath)),
+                onBackgroundImageError: (exception, stackTrace) {
+                  print("Error cargando imagen: $exception");
+                },
+              )
+            : CircleAvatar(
+                backgroundColor: const Color.fromARGB(
+                  255,
+                  182,
+                  128,
+                  128,
+                ).withOpacity(0.2),
+                child: Icon(
+                  Icons.pets,
+                  color: const Color.fromARGB(255, 137, 77, 77),
+                ),
+              ),
         title: Text(
-          animal['nombre'] ?? 'Sin nombre',
+          tganado['nombregdo'] ?? 'Sin nombre',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 4),
-            if (animal['especie'] != null)
-              Text('Especie: ${animal['especie']}'),
-            if (animal['raza'] != null) Text('Raza: ${animal['raza']}'),
-            if (animal['peso'] != null) Text('Peso: ${animal['peso']} kg'),
-            if (animal['fechaNacimiento'] != null)
-              Text('Nacimiento: ${animal['fechaNacimiento']}'),
+            if (tganado['aretegdo'] != null)
+              Text('Arete: ${tganado['aretegdo']}'),
+            if (tganado['sexogdo'] != null) Text('Sexo: ${tganado['sexogdo']}'),
+            if (tganado['nacimientogdo'] != null)
+              Text('Nacimiento: ${tganado['nacimientogdo']}'),
             SizedBox(height: 4),
             Text(
-              'ID: ${animal['id']}',
+              'ID: ${tganado['idgdo']}',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
@@ -155,9 +165,9 @@ class PagAnimales extends StatelessWidget {
           icon: Icon(Icons.more_vert),
           onSelected: (value) {
             if (value == 'edit') {
-              _showEditAnimalDialog(context, animal);
+              _showEditAnimalDialog(context, tganado);
             } else if (value == 'delete') {
-              _showDeleteConfirmation(context, animal);
+              _showDeleteConfirmation(context, tganado);
             }
           },
           itemBuilder: (BuildContext context) => [
@@ -187,6 +197,35 @@ class PagAnimales extends StatelessWidget {
     );
   }
 
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: const Color.fromARGB(255, 137, 77, 77),
+              onPrimary: Colors.white,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final formattedDate = "${picked.day}/${picked.month}/${picked.year}";
+      controller.text = formattedDate;
+    }
+  }
+
   Future<List<Widget>> _buildSearchSuggestions(String query) async {
     try {
       final resultados = await SQLHelper.searchAnimales(query);
@@ -200,17 +239,15 @@ class PagAnimales extends StatelessWidget {
         ];
       }
 
-      return resultados.map((animal) {
+      return resultados.map((tganado) {
         return ListTile(
           leading: Icon(
             Icons.pets,
             color: const Color.fromARGB(255, 137, 77, 77),
           ),
-          title: Text(animal['nombre'] ?? 'Sin nombre'),
-          subtitle: Text('${animal['especie']} - ${animal['raza']}'),
-          onTap: () {
-            // Aquí puedes navegar a los detalles del animal o llenar el campo de búsqueda
-          },
+          title: Text(tganado['nombregdo'] ?? 'Sin nombre'),
+          subtitle: Text('${tganado['aretegdo']} - ${tganado['sexogdo']}'),
+          onTap: () {},
         );
       }).toList();
     } catch (e) {
@@ -224,213 +261,511 @@ class PagAnimales extends StatelessWidget {
   }
 
   void _showAddAnimalDialog(BuildContext context) {
+    final areteController = TextEditingController();
     final nombreController = TextEditingController();
-    final especieController = TextEditingController();
+    final sexoController = TextEditingController();
     final razaController = TextEditingController();
-    final pesoController = TextEditingController();
     final fechaNacimientoController = TextEditingController();
+    final corralController = TextEditingController();
+    final alimentoController = TextEditingController();
+    final produccionController = TextEditingController();
+    final estatusController = TextEditingController();
+    final observacionController = TextEditingController();
+
+    File? selectedImage;
+    String? imagePath;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Agregar Animal"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nombreController,
-                  decoration: InputDecoration(
-                    labelText: 'Nombre',
-                    border: OutlineInputBorder(),
-                  ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Agregar Animal"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Selector de imagen
+                    _buildImageSelector(setState, selectedImage, imagePath, (
+                      File? newImage,
+                      String? newPath,
+                    ) {
+                      selectedImage = newImage;
+                      imagePath = newPath;
+                    }),
+                    SizedBox(height: 16),
+
+                    TextField(
+                      controller: areteController,
+                      decoration: InputDecoration(
+                        labelText: 'Arete',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: nombreController,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: sexoController,
+                      decoration: InputDecoration(
+                        labelText: 'Sexo',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: razaController,
+                      decoration: InputDecoration(
+                        labelText: 'Raza',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: fechaNacimientoController,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha de Nacimiento',
+                        border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () =>
+                              _selectDate(context, fechaNacimientoController),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: corralController,
+                      decoration: InputDecoration(
+                        labelText: 'Corral',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: alimentoController,
+                      decoration: InputDecoration(
+                        labelText: 'Alimento',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: produccionController,
+                      decoration: InputDecoration(
+                        labelText: 'Tipo de producción',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: estatusController,
+                      decoration: InputDecoration(
+                        labelText: 'Estatus',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: observacionController,
+                      decoration: InputDecoration(
+                        labelText: 'Observaciones',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: especieController,
-                  decoration: InputDecoration(
-                    labelText: 'Especie',
-                    border: OutlineInputBorder(),
-                  ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancelar'),
                 ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: razaController,
-                  decoration: InputDecoration(
-                    labelText: 'Raza',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: pesoController,
-                  decoration: InputDecoration(
-                    labelText: 'Peso (kg)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: fechaNacimientoController,
-                  decoration: InputDecoration(
-                    labelText: 'Fecha de Nacimiento',
-                    border: OutlineInputBorder(),
-                  ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (areteController.text.isEmpty ||
+                        nombreController.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Arete y Nombre son obligatorios'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final nuevoAnimal = {
+                      'aretegdo': areteController.text,
+                      'nombregdo': nombreController.text,
+                      'sexogdo': sexoController.text,
+                      'razagdo': razaController.text,
+                      'nacimientogdo': fechaNacimientoController.text,
+                      'corralgdo': corralController.text,
+                      'alimentogdo': alimentoController.text,
+                      'prodgdo': produccionController.text,
+                      'estatusgdo': estatusController.text,
+                      'observaciongdo': observacionController.text,
+                      'fotogdo': imagePath ?? '',
+                    };
+
+                    try {
+                      await SQLHelper.createAnimal(nuevoAnimal);
+                      onRefresh();
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Animal agregado exitosamente'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al agregar animal: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  child: Text('Guardar'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final nuevoAnimal = {
-                  'nombre': nombreController.text,
-                  'especie': especieController.text,
-                  'raza': razaController.text,
-                  'peso': double.tryParse(pesoController.text),
-                  'fechaNacimiento': fechaNacimientoController.text,
-                };
-
-                try {
-                  await SQLHelper.createAnimal(nuevoAnimal);
-                  onRefresh(); // Actualizar la lista
-                  Navigator.pop(context);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Animal agregado exitosamente'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al agregar animal: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: Text('Guardar'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
   }
 
+  Widget _buildImageSelector(
+    StateSetter setState,
+    File? selectedImage,
+    String? imagePath,
+    Function(File?, String?) onImageChanged,
+  ) {
+    return Column(
+      children: [
+        if (selectedImage != null)
+          Container(
+            height: 150,
+            width: 150,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.file(
+                selectedImage,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(Icons.error, color: Colors.red, size: 50);
+                },
+              ),
+            ),
+          )
+        else
+          Container(
+            height: 150,
+            width: 150,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey),
+              color: Colors.grey[100],
+            ),
+            child: Icon(Icons.photo_camera, size: 50, color: Colors.grey[400]),
+          ),
+
+        SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () async {
+                final image = await ImageService.takePhoto();
+                if (image != null) {
+                  final savedPath = await ImageService.saveImageToAppDirectory(
+                    image,
+                  );
+                  setState(() {
+                    selectedImage = image;
+                    imagePath = savedPath;
+                  });
+                }
+              },
+              icon: Icon(Icons.camera_alt),
+              label: Text('Cámara'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final image = await ImageService.pickPhoto();
+                if (image != null) {
+                  final savedPath = await ImageService.saveImageToAppDirectory(
+                    image,
+                  );
+                  setState(() {
+                    selectedImage = image;
+                    imagePath = savedPath;
+                  });
+                }
+              },
+              icon: Icon(Icons.photo_library),
+              label: Text('Galería'),
+            ),
+          ],
+        ),
+        if (selectedImage != null)
+          TextButton(
+            onPressed: () {
+              setState(() {
+                selectedImage = null;
+                imagePath = null;
+              });
+            },
+            child: Text('Quitar foto', style: TextStyle(color: Colors.red)),
+          ),
+      ],
+    );
+  }
+
   void _showEditAnimalDialog(
     BuildContext context,
-    Map<String, dynamic> animal,
+    Map<String, dynamic> tganado,
   ) {
+    final areteController = TextEditingController(
+      text: tganado['aretegdo']?.toString() ?? '',
+    );
     final nombreController = TextEditingController(
-      text: animal['nombre'] ?? '',
+      text: tganado['nombregdo']?.toString() ?? '',
     );
-    final especieController = TextEditingController(
-      text: animal['especie'] ?? '',
+    final sexoController = TextEditingController(
+      text: tganado['sexogdo']?.toString() ?? '',
     );
-    final razaController = TextEditingController(text: animal['raza'] ?? '');
-    final pesoController = TextEditingController(
-      text: animal['peso']?.toString() ?? '',
+    final razaController = TextEditingController(
+      text: tganado['razagdo']?.toString() ?? '',
     );
     final fechaNacimientoController = TextEditingController(
-      text: animal['fechaNacimiento'] ?? '',
+      text: tganado['nacimientogdo']?.toString() ?? '',
     );
+    final corralController = TextEditingController(
+      text: tganado['corralgdo']?.toString() ?? '',
+    );
+    final alimentoController = TextEditingController(
+      text: tganado['alimentogdo']?.toString() ?? '',
+    );
+    final produccionController = TextEditingController(
+      text: tganado['prodgdo']?.toString() ?? '',
+    );
+    final estatusController = TextEditingController(
+      text: tganado['estatusgdo']?.toString() ?? '',
+    );
+    final observacionController = TextEditingController(
+      text: tganado['observaciongdo']?.toString() ?? '',
+    );
+
+    File? selectedImage;
+    String? imagePath = tganado['fotogdo']?.toString();
+
+    // Cargar imagen existente si hay una
+    if (imagePath != null && imagePath!.isNotEmpty) {
+      final file = File(imagePath!);
+      if (file.existsSync()) {
+        selectedImage = file;
+      }
+    }
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Editar Animal"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nombreController,
-                  decoration: InputDecoration(
-                    labelText: 'Nombre',
-                    border: OutlineInputBorder(),
-                  ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Editar Animal"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildImageSelector(setState, selectedImage, imagePath, (
+                      File? newImage,
+                      String? newPath,
+                    ) {
+                      selectedImage = newImage;
+                      imagePath = newPath;
+                    }),
+                    SizedBox(height: 16),
+
+                    TextField(
+                      controller: areteController,
+                      decoration: InputDecoration(
+                        labelText: 'Arete',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: nombreController,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: sexoController,
+                      decoration: InputDecoration(
+                        labelText: 'Sexo',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: razaController,
+                      decoration: InputDecoration(
+                        labelText: 'Raza',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: fechaNacimientoController,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha de Nacimiento',
+                        border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () =>
+                              _selectDate(context, fechaNacimientoController),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: corralController,
+                      decoration: InputDecoration(
+                        labelText: 'Corral',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: alimentoController,
+                      decoration: InputDecoration(
+                        labelText: 'Alimento',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: produccionController,
+                      decoration: InputDecoration(
+                        labelText: 'Producción',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: estatusController,
+                      decoration: InputDecoration(
+                        labelText: 'Estatus',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: observacionController,
+                      decoration: InputDecoration(
+                        labelText: 'Observaciones',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: especieController,
-                  decoration: InputDecoration(
-                    labelText: 'Especie',
-                    border: OutlineInputBorder(),
-                  ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancelar'),
                 ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: razaController,
-                  decoration: InputDecoration(
-                    labelText: 'Raza',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: pesoController,
-                  decoration: InputDecoration(
-                    labelText: 'Peso (kg)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: fechaNacimientoController,
-                  decoration: InputDecoration(
-                    labelText: 'Fecha de Nacimiento',
-                    border: OutlineInputBorder(),
-                  ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (tganado['idgdo'] == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: ID del animal no válido'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final animalActualizado = {
+                      'aretegdo': areteController.text,
+                      'nombregdo': nombreController.text,
+                      'sexogdo': sexoController.text,
+                      'razagdo': razaController.text,
+                      'nacimientogdo': fechaNacimientoController.text,
+                      'corralgdo': corralController.text,
+                      'alimentogdo': alimentoController.text,
+                      'prodgdo': produccionController.text,
+                      'estatusgdo': estatusController.text,
+                      'observaciongdo': observacionController.text,
+                      'fotogdo': imagePath ?? '',
+                    };
+
+                    try {
+                      await SQLHelper.updateAnimal(
+                        tganado['idgdo'],
+                        animalActualizado,
+                      );
+                      onRefresh();
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Animal actualizado exitosamente'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al actualizar animal: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  child: Text('Actualizar'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final animalActualizado = {
-                  'nombre': nombreController.text,
-                  'especie': especieController.text,
-                  'raza': razaController.text,
-                  'peso': double.tryParse(pesoController.text),
-                  'fechaNacimiento': fechaNacimientoController.text,
-                };
-
-                try {
-                  await SQLHelper.updateAnimal(animal['id'], animalActualizado);
-                  onRefresh(); // Actualizar la lista
-                  Navigator.pop(context);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Animal actualizado exitosamente'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al actualizar animal: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: Text('Actualizar'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -438,7 +773,7 @@ class PagAnimales extends StatelessWidget {
 
   void _showDeleteConfirmation(
     BuildContext context,
-    Map<String, dynamic> animal,
+    Map<String, dynamic> tganado,
   ) {
     showDialog(
       context: context,
@@ -446,7 +781,7 @@ class PagAnimales extends StatelessWidget {
         return AlertDialog(
           title: Text("Eliminar Animal"),
           content: Text(
-            "¿Estás seguro de que quieres eliminar a ${animal['nombre']}?",
+            "¿Estás seguro de que quieres eliminar a ${tganado['nombregdo']}?",
           ),
           actions: [
             TextButton(
@@ -456,8 +791,14 @@ class PagAnimales extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 try {
-                  await SQLHelper.deleteAnimal(animal['id']);
-                  onRefresh(); // Actualizar la lista
+                  // Eliminar imagen si existe
+                  final imagePath = tganado['fotogdo']?.toString();
+                  if (imagePath != null && imagePath.isNotEmpty) {
+                    await ImageService.deleteImage(imagePath);
+                  }
+
+                  await SQLHelper.deleteAnimal(tganado['idgdo']);
+                  onRefresh();
                   Navigator.pop(context);
 
                   ScaffoldMessenger.of(context).showSnackBar(

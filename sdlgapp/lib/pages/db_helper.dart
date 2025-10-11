@@ -8,19 +8,22 @@ class SQLHelper {
     try {
       print("Creando tablas...");
 
-      // Tabla de Animales
-      await database.execute("""CREATE TABLE IF NOT EXISTS animales(
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        nombre TEXT,
-        especie TEXT,
-        raza TEXT,
-        fechaNacimiento TEXT,
-        peso REAL,
-        propietarioId INTEGER,
-        corralId INTEGER,
-        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      // Tabla de tganado
+      await database.execute("""CREATE TABLE IF NOT EXISTS tganado(
+        idgdo INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        aretegdo NUMERIC,
+        nombregdo TEXT,
+        sexogdo TEXT,
+        razagdo TEXT,
+        nacimientogdo NUMERIC,
+        corralgdo TEXT,
+        alimentogdo TEXT,
+        prodgdo TEXT,
+        estatusgdo TEXT,
+        observaciongdo TEXT,
+        fotogdo TEXT
       )""");
-      print("Tabla 'animales' creada/verificada");
+      print("Tabla 'tganado' creada/verificada");
 
       // Tabla de Becerros
       await database.execute("""CREATE TABLE IF NOT EXISTS becerros(
@@ -28,8 +31,8 @@ class SQLHelper {
         nombre TEXT,
         madreId INTEGER,
         padreId INTEGER,
-        fechaNacimiento TEXT,
-        pesoNacimiento REAL,
+        fechaNacimiento NUMERIC,
+        pesoNacimiento NUMERIC,
         observaciones TEXT,
         createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )""");
@@ -128,28 +131,32 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS PARA ANIMALES ==========
+  // ========== MÉTODOS PARA ANIMALES ========== **** NOMBRE DE LA TABLA: tganado****
   static Future<int> createAnimal(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
       // Asegurar que los campos opcionales tengan valores por defecto
       final animalData = {
-        'nombre': data['nombre'] ?? '',
-        'especie': data['especie'] ?? '',
-        'raza': data['raza'] ?? '',
-        'fechaNacimiento': data['fechaNacimiento'] ?? '',
-        'peso': data['peso'],
-        'propietarioId': data['propietarioId'],
-        'corralId': data['corralId'],
+        'aretegdo': data['aretegdo'] ?? '',
+        'nombregdo': data['nombregdo'] ?? '',
+        'sexogdo': data['sexogdo'] ?? '',
+        'razagdo': data['razagdo'] ?? '',
+        'nacimientogdo': data['nacimientogdo'] ?? '',
+        'corralgdo': data['corralgdo'],
+        'alimentogdo': data['alimentogdo'] ?? '',
+        'prodgdo': data['prodgdo'],
+        'estatusgdo': data['estatusgdo'] ?? '',
+        'observaciongdo': data['observaciongdo'] ?? '',
+        'fotogdo': data['fotogdo'] ?? '',
       };
 
-      final id = await db.insert(
-        'animales',
+      final idgdo = await db.insert(
+        'tganado',
         animalData,
         conflictAlgorithm: sql.ConflictAlgorithm.replace,
       );
-      print("Animal creado con ID: $id");
-      return id;
+      print("Animal creado con ID: $idgdo");
+      return idgdo;
     } catch (e) {
       print("Error creando animal: $e");
       // Debug adicional
@@ -161,7 +168,7 @@ class SQLHelper {
   static Future<List<Map<String, dynamic>>> getAllAnimales() async {
     final db = await SQLHelper.db();
     try {
-      final result = await db.query('animales', orderBy: "id DESC");
+      final result = await db.query('tganado', orderBy: "idgdo DESC");
       print("Animales obtenidos: ${result.length} registros");
       return result;
     } catch (e) {
@@ -172,13 +179,13 @@ class SQLHelper {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getAnimal(int id) async {
+  static Future<List<Map<String, dynamic>>> getAnimal(int idgdo) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.query(
-        'animales',
-        where: "id = ?",
-        whereArgs: [id],
+        'tganado',
+        where: "idgdo = ?",
+        whereArgs: [idgdo],
         limit: 1,
       );
       return result;
@@ -188,28 +195,77 @@ class SQLHelper {
     }
   }
 
-  static Future<int> updateAnimal(int id, Map<String, dynamic> data) async {
+  static Future<int> updateAnimal(int idgdo, Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
-      final result = await db.update(
-        'animales',
-        data,
-        where: "id = ?",
-        whereArgs: [id],
+      print("=== ACTUALIZANDO ANIMAL EN BD ===");
+      print("ID: $idgdo");
+      print("Datos recibidos: $data");
+
+      // Verificar que la tabla existe
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='tganado'",
       );
+
+      if (tables.isEmpty) {
+        throw Exception("La tabla 'tganado' no existe");
+      }
+
+      // Verificar que el animal existe
+      final animalExistente = await db.query(
+        'tganado',
+        where: "idgdo = ?",
+        whereArgs: [idgdo],
+      );
+
+      if (animalExistente.isEmpty) {
+        throw Exception("Animal con ID $idgdo no encontrado");
+      }
+
+      print("Animal encontrado: ${animalExistente.first}");
+
+      // Filtrar solo los campos que existen en la tabla
+      final camposValidos = [
+        'aretegdo',
+        'nombregdo',
+        'sexogdo',
+        'razagdo',
+        'nacimientogdo',
+        'corralgdo',
+        'alimentogdo',
+        'prodgdo',
+        'estatusgdo',
+        'observaciongdo',
+        'fotogdo',
+      ];
+
+      final datosFiltrados = Map<String, dynamic>.fromEntries(
+        data.entries.where((entry) => camposValidos.contains(entry.key)),
+      );
+
+      print("Datos filtrados: $datosFiltrados");
+
+      final result = await db.update(
+        'tganado',
+        datosFiltrados,
+        where: "idgdo = ?",
+        whereArgs: [idgdo],
+      );
+
       print("Animal actualizado: $result filas afectadas");
       return result;
     } catch (e) {
-      print("Error actualizando animal: $e");
+      print("ERROR en updateAnimal: $e");
+      print("Stack trace: ${e.toString()}");
       rethrow;
     }
   }
 
-  static Future<void> deleteAnimal(int id) async {
+  static Future<void> deleteAnimal(int idgdo) async {
     final db = await SQLHelper.db();
     try {
-      await db.delete("animales", where: "id = ?", whereArgs: [id]);
-      print("Animal eliminado con ID: $id");
+      await db.delete("tganado", where: "idgdo = ?", whereArgs: [idgdo]);
+      print("Animal eliminado con ID: $idgdo");
     } catch (e) {
       print("Error eliminando animal: $e");
       rethrow;
@@ -467,10 +523,22 @@ class SQLHelper {
     final db = await SQLHelper.db();
     try {
       final result = await db.query(
-        'animales',
-        where: "nombre LIKE ? OR especie LIKE ? OR raza LIKE ?",
-        whereArgs: ['%$query%', '%$query%', '%$query%'],
-        orderBy: "id DESC",
+        'tganado',
+        where:
+            "aretegdo LIKE ? OR nombregdo LIKE ? OR sexogdo LIKE ? OR razagdo LIKE ? OR nacimientogdo LIKE ? OR corralgdo LIKE ? OR alimentogdo LIKE ? OR prodgdo LIKE ? OR estatusgdo LIKE ? OR observaciongdo LIKE ?",
+        whereArgs: [
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+        ],
+        orderBy: "idgdo DESC",
       );
       print("Búsqueda animales: ${result.length} resultados para '$query'");
       return result;
@@ -487,7 +555,7 @@ class SQLHelper {
         'becerros',
         where: "nombre LIKE ? OR observaciones LIKE ?",
         whereArgs: ['%$query%', '%$query%'],
-        orderBy: "id DESC",
+        orderBy: "idbece DESC",
       );
       print("Búsqueda becerros: ${result.length} resultados para '$query'");
       return result;
@@ -537,12 +605,10 @@ class SQLHelper {
   static Future<int> getTotalAnimales() async {
     final db = await SQLHelper.db();
     try {
-      final result = await db.rawQuery(
-        'SELECT COUNT(*) as total FROM animales',
-      );
+      final result = await db.rawQuery('SELECT COUNT(*) as total FROM tganado');
       return result.first['total'] as int;
     } catch (e) {
-      print("Error obteniendo total de animales: $e");
+      print("Error obteniendo total de tganado: $e");
       return 0;
     }
   }

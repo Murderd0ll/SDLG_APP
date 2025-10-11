@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<key>NSCameraUsageDescription</key>
+<string>Esta app necesita acceso a la cámara para tomar fotos de animales</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Esta app necesita acceso a la galería para seleccionar fotos de animales</string>
 </dict>
 </plist>
