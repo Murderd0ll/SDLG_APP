@@ -1,10 +1,209 @@
 // db_helper.dart - Versión completa y corregida
+import 'package:path_provider/path_provider.dart';
 import 'package:sdlgapp/pages/PagAnimales.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 import 'package:path/path.dart' as path;
+import 'dart:io';
+import 'package:share_plus/share_plus.dart';
 
 class SQLHelper {
-  // En SQLHelper class
+  static Future<void> debugDatabaseLocation() async {
+    try {
+      final databasePath = await sql.getDatabasesPath();
+      final String dbPath = path.join(databasePath, 'SDLGAPP.db');
+
+      print("=== INFORMACIÓN DETALLADA DE LA BD ===");
+      print("📁 Directorio de bases de datos: $databasePath");
+      print("🗂️ Ruta completa de la BD: $dbPath");
+
+      // Verificar si el archivo existe
+      final dbFile = File(dbPath);
+      final exists = await dbFile.exists();
+      print("✅ ¿Archivo de BD existe?: $exists");
+
+      if (exists) {
+        final stat = await dbFile.stat();
+        print("📊 Tamaño del archivo: ${stat.size} bytes");
+        print("🕐 Última modificación: ${stat.modified}");
+      } else {
+        print("❌ El archivo de BD NO existe aún");
+      }
+
+      // Verificar el directorio
+      final dir = Directory(databasePath);
+      final dirExists = await dir.exists();
+      print("📂 ¿Directorio existe?: $dirExists");
+
+      if (dirExists) {
+        final files = await dir.list().toList();
+        print("📄 Archivos en el directorio:");
+        for (var file in files) {
+          if (file is File) {
+            final fileStat = await file.stat();
+            print("   - ${file.path} (${fileStat.size} bytes)");
+          }
+        }
+      }
+      print("======================================");
+    } catch (e) {
+      print("❌ Error en debugDatabaseLocation: $e");
+    }
+  }
+
+  static Future<void> exportRealDatabase() async {
+    try {
+      // Primero, obtener la ruta real de la base de datos
+      final databasePath = await sql.getDatabasesPath();
+      final dbFile = File('$databasePath/SDLGAPP.db');
+
+      if (!await dbFile.exists()) {
+        print("❌ El archivo de base de datos no existe");
+        return;
+      }
+
+      // Verificar que es un archivo SQLite válido
+      final stat = await dbFile.stat();
+      print("📊 Tamaño real de la BD: ${stat.size} bytes");
+
+      if (stat.size < 8192) {
+        // SQLite mínimo suele ser >8KB
+        print("❌ Archivo de BD demasiado pequeño, posiblemente corrupto");
+        return;
+      }
+
+      // Obtener directorio de descargas
+      final downloadsDirectory = await getDownloadsDirectory();
+      final exportFile = File('${downloadsDirectory?.path}/SDLGAPP_export.db');
+
+      // COPIAR el archivo real de la base de datos
+      await dbFile.copy(exportFile.path);
+
+      print("✅ Base de datos exportada correctamente");
+      print("📁 Ruta: ${exportFile.path}");
+      print("📊 Tamaño: ${stat.size} bytes");
+
+      // También crear un reporte de texto con los datos
+      await _createDataReport();
+
+      // Compartir el archivo REAL de la base de datos
+      await Share.shareXFiles(
+        [XFile(exportFile.path)],
+        subject: 'Base de Datos SDLGAPP - Archivo Real',
+        text:
+            'Archivo real de la base de datos SDLGAPP\n'
+            'Fecha: ${DateTime.now()}\n'
+            'Tamaño: ${stat.size} bytes\n'
+            'Puedes abrirlo con DB Browser for SQLite',
+      );
+    } catch (e) {
+      print("❌ Error exportando base de datos real: $e");
+
+      // Fallback: exportar solo los datos
+      await exportDataAsText();
+    }
+  }
+
+  static Future<void> _createDataReport() async {
+    try {
+      final db = await SQLHelper.db();
+      final directory = await getDownloadsDirectory();
+      final reportFile = File('${directory?.path}/database_report.txt');
+
+      final animales = await db.query('tganado');
+      final salud = await db.query('tsalud');
+
+      final report = StringBuffer();
+      report.writeln('REPORTE DE BASE DE DATOS - SDLGAPP');
+      report.writeln('Generado: ${DateTime.now()}');
+      report.writeln('');
+      report.writeln('ANIMALES REGISTRADOS: ${animales.length}');
+      report.writeln('=' * 50);
+
+      for (var animal in animales) {
+        report.writeln('ID: ${animal['idgdo']}');
+        report.writeln('  Nombre: ${animal['nombregdo']}');
+        report.writeln('  Arete: ${animal['aretegdo']}');
+        report.writeln('  Sexo: ${animal['sexogdo']}');
+        report.writeln('  Raza: ${animal['razagdo']}');
+        report.writeln('  Fecha Nac: ${animal['nacimientogdo']}');
+        report.writeln('  Corral: ${animal['corralgdo']}');
+        report.writeln('  Estatus: ${animal['estatusgdo']}');
+        if (animal['fotogdo'] != null &&
+            animal['fotogdo'].toString().isNotEmpty) {
+          report.writeln('  ✅ Tiene foto');
+        }
+        report.writeln('---');
+      }
+
+      report.writeln('');
+      report.writeln('REGISTROS DE SALUD: ${salud.length}');
+      report.writeln('=' * 50);
+
+      for (var registro in salud) {
+        report.writeln('ID: ${registro['idsalud']}');
+        report.writeln('  Arete Animal: ${registro['areteanimal']}');
+        report.writeln('  Veterinario: ${registro['nomvet']}');
+        report.writeln('  Procedimiento: ${registro['procedimiento']}');
+        report.writeln('  Fecha: ${registro['fecharev']}');
+        report.writeln('---');
+      }
+
+      await reportFile.writeAsString(report.toString());
+      print("📄 Reporte de datos creado: ${reportFile.path}");
+    } catch (e) {
+      print("❌ Error creando reporte: $e");
+    }
+  }
+
+  static Future<void> exportDataAsText() async {
+    try {
+      final db = await SQLHelper.db();
+      final directory = await getDownloadsDirectory();
+      final file = File('${directory?.path}/datos_completos.txt');
+
+      final animales = await db.query('tganado');
+      final salud = await db.query('tsalud');
+      final becerros = await db.query('becerros');
+
+      final content = StringBuffer();
+      content.writeln('=== DATOS COMPLETOS SDLGAPP ===');
+      content.writeln('Fecha: ${DateTime.now()}');
+      content.writeln('');
+
+      content.writeln('🐮 ANIMALES (${animales.length}):');
+      for (var animal in animales) {
+        content.writeln('  ID: ${animal['idgdo']}');
+        content.writeln('  Nombre: ${animal['nombregdo']}');
+        content.writeln('  Arete: ${animal['aretegdo']}');
+        content.writeln('  Sexo: ${animal['sexogdo']}');
+        content.writeln('  Raza: ${animal['razagdo']}');
+        content.writeln('  -----------------');
+      }
+
+      content.writeln('');
+      content.writeln('🏥 SALUD (${salud.length}):');
+      for (var reg in salud) {
+        content.writeln('  ID: ${reg['idsalud']}');
+        content.writeln('  Arete: ${reg['areteanimal']}');
+        content.writeln('  Procedimiento: ${reg['procedimiento']}');
+        content.writeln('  -----------------');
+      }
+
+      await file.writeAsString(content.toString());
+
+      // Compartir el reporte de texto
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Datos SDLGAPP - Reporte',
+        text: 'Reporte completo de datos de la aplicación SDLGAPP',
+      );
+
+      print("✅ Datos exportados como texto: ${file.path}");
+    } catch (e) {
+      print("❌ Error exportando datos como texto: $e");
+    }
+  }
+
   static Future<void> debugAnimalImages() async {
     final db = await SQLHelper.db();
     try {
@@ -56,7 +255,7 @@ class SQLHelper {
     try {
       print("Creando tablas...");
 
-      // Tabla de tganado
+      // ************* Tabla de tganado *************
       await database.execute("""CREATE TABLE IF NOT EXISTS tganado(
         idgdo INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         aretegdo TEXT,
@@ -73,7 +272,20 @@ class SQLHelper {
       )""");
       print("Tabla 'tganado' creada/verificada");
 
-      // Tabla de Becerros
+      // ************* Tabla de salud *************
+      await database.execute("""CREATE TABLE IF NOT EXISTS tsalud(
+      idsalud INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      areteanimal TEXT NOT NULL,
+      nomvet TEXT,
+      procedimiento TEXT,
+      condicionsalud TEXT,
+      fecharev TEXT,
+      observacionsalud TEXT,
+      archivo TEXT
+    )""");
+      print("Tabla 'tsalud' creada/verificada");
+
+      // ************* Tabla de Becerros *************
       await database.execute("""CREATE TABLE IF NOT EXISTS becerros(
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         nombre TEXT,
@@ -86,7 +298,7 @@ class SQLHelper {
       )""");
       print("Tabla 'becerros' creada/verificada");
 
-      // Tabla de Propietarios
+      // ************* Tabla de Propietarios *************
       await database.execute("""CREATE TABLE IF NOT EXISTS propietarios(
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         nombre TEXT,
@@ -98,7 +310,7 @@ class SQLHelper {
       )""");
       print("Tabla 'propietarios' creada/verificada");
 
-      // Tabla de Corrales
+      // ************* Tabla de Corrales *************
       await database.execute("""CREATE TABLE IF NOT EXISTS corrales(
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         nombre TEXT,
@@ -108,15 +320,19 @@ class SQLHelper {
         createdAt TEXT
       )""");
       print("Tabla 'corrales' creada/verificada");
-
+      //Si todas las tablas se crearon en la terminal mostrara este mensaje
       print("Todas las tablas creadas exitosamente");
     } catch (e) {
+      //Si hubo algun error mandara este mensaje con el nombre de la tabla junto con el error que paso
       print("Error creando tablas: $e");
       rethrow;
     }
   }
 
-  // Método para resetear la base de datos
+  // Este es el método para resetear la base de datos, este sirve para estar haciendo pruebas cuando cambias datos o así de q necesites
+  // estar borrando la bdd y volver a crearla de 0, pero si ya no lo ocupas lo quitas en el main.dart
+  //(es en la linea 57 mas o menos xD dice algo como await SQLHelper.resetDatabase(); , a ese nomás lo comentas y
+  // ya no se reiniciará la bdd)
   static Future<void> resetDatabase() async {
     try {
       final databasePath = await sql.getDatabasesPath();
@@ -128,7 +344,8 @@ class SQLHelper {
     }
   }
 
-  // Método para debug: verificar estado de la base de datos
+  // Método para debugear xD o verificar el estado de la base de datos, este nomás se muestra en la terminal y es para ir checando si
+  //se esta creando bien o q esta pasando si hay errores
   static Future<void> debugDatabaseStatus() async {
     try {
       final database = await db();
@@ -154,7 +371,110 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS PARA ANIMALES ==========
+  // =========== Métodos de salud para animales ===========
+
+  //Este es para crear un registro de salud para un animal
+  static Future<int> createRegistroSalud(Map<String, dynamic> data) async {
+    final db = await SQLHelper.db();
+    try {
+      final saludData = {
+        'areteanimal': data['areteanimal'] ?? '',
+        'nomvet': data['nomvet'] ?? '',
+        'procedimiento': data['procedimiento'] ?? '',
+        'condicionsalud': data['condicionsalud'] ?? '',
+        'fecharev': data['fecharev'] ?? '',
+        'observacionsalud': data['observacionsalud'] ?? '',
+        'archivo': data['archivo'] ?? '',
+      };
+
+      final id = await db.insert(
+        'tsalud',
+        saludData,
+        conflictAlgorithm: sql.ConflictAlgorithm.replace,
+      );
+      print("Registro de salud creado con ID: $id");
+      return id;
+    } catch (e) {
+      print("Error creando registro de salud: $e");
+      rethrow;
+    }
+  }
+
+  // Obtener registros por arete del animal (búsqueda flexible)
+  static Future<List<Map<String, dynamic>>> getRegistrosSaludPorArete(
+    String areteanimal,
+  ) async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.query(
+        'tsalud',
+        where: "areteanimal LIKE ?",
+        whereArgs: ['%$areteanimal%'],
+        orderBy: "fecharev DESC",
+      );
+      print(
+        "Registros de salud obtenidos: ${result.length} para arete $areteanimal",
+      );
+      return result;
+    } catch (e) {
+      print("Error obteniendo registros de salud: $e");
+      return [];
+    }
+  }
+
+  // Búsqueda general en registros de salud
+  static Future<List<Map<String, dynamic>>> searchRegistrosSalud(
+    String query,
+  ) async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.query(
+        'tsalud',
+        where: "areteanimal LIKE ? OR nomvet LIKE ? OR procedimiento LIKE ?",
+        whereArgs: ['%$query%', '%$query%', '%$query%'],
+        orderBy: "fecharev DESC",
+      );
+      print("Búsqueda salud: ${result.length} resultados para '$query'");
+      return result;
+    } catch (e) {
+      print("Error buscando registros de salud: $e");
+      return [];
+    }
+  }
+
+  // Los métodos updateRegistroSalud y deleteRegistroSalud se mantienen igual
+  static Future<int> updateRegistroSalud(
+    int idsalud,
+    Map<String, dynamic> data,
+  ) async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.update(
+        'tsalud',
+        data,
+        where: "idsalud = ?",
+        whereArgs: [idsalud],
+      );
+      print("Registro de salud actualizado: $result filas afectadas");
+      return result;
+    } catch (e) {
+      print("Error actualizando registro de salud: $e");
+      rethrow;
+    }
+  }
+
+  static Future<void> deleteRegistroSalud(int idsalud) async {
+    final db = await SQLHelper.db();
+    try {
+      await db.delete("tsalud", where: "idsalud = ?", whereArgs: [idsalud]);
+      print("Registro de salud eliminado con ID: $idsalud");
+    } catch (e) {
+      print("Error eliminando registro de salud: $e");
+      rethrow;
+    }
+  }
+
+  // ************* Métodos para animales xd *************
   static Future<int> createAnimal(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
@@ -268,7 +588,7 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS PARA BECERROS ==========
+  // ************* Métodos para becerros *************
   static Future<int> createBecerro(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
@@ -351,7 +671,7 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS PARA PROPIETARIOS ==========
+  // ************* Métodos para propietarios *************
   static Future<int> createPropietario(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
@@ -436,7 +756,7 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS PARA CORRALES ==========
+  // ************* Métodos para corrales *************
   static Future<int> createCorral(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
@@ -517,7 +837,7 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS DE BÚSQUEDA ==========
+  // ************* Métodos de búsqueda *************
   static Future<List<Map<String, dynamic>>> searchAnimales(String query) async {
     final db = await SQLHelper.db();
     try {
@@ -590,7 +910,7 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS DE ESTADÍSTICAS/INFORMES ==========
+  // ************* Métodos de estadísticas/informes *************
   static Future<int> getTotalAnimales() async {
     final db = await SQLHelper.db();
     try {
@@ -641,7 +961,7 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS DE ANÁLISIS ADICIONALES ==========
+  // ************* Métodos de análisis adicionales *************
   static Future<List<Map<String, dynamic>>> getAnimalesPorSexo() async {
     final db = await SQLHelper.db();
     try {
@@ -691,7 +1011,7 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS DE LIMPIEZA ==========
+  // ************* Métodos de limpieza *************
   static Future<void> closeDatabase() async {
     try {
       // Sqflite maneja el cierre automáticamente en la mayoría de los casos
@@ -701,7 +1021,7 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODO PARA VERIFICAR CONEXIÓN ==========
+  // ************* Método para verificar conexión *************
   static Future<bool> testConnection() async {
     try {
       final db = await SQLHelper.db();
