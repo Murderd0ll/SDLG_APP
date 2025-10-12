@@ -1,8 +1,101 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
 import 'package:sdlgapp/services/image_service.dart';
+
+class ImageService {
+  static final ImagePicker _picker = ImagePicker();
+
+  // Tomar foto con cámara
+  static Future<File?> takePhoto() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,
+        maxWidth: 800,
+      );
+      return image != null ? File(image.path) : null;
+    } catch (e) {
+      print("Error tomando foto: $e");
+      return null;
+    }
+  }
+
+  // Seleccionar de galería
+  static Future<File?> pickPhoto() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 800,
+      );
+      return image != null ? File(image.path) : null;
+    } catch (e) {
+      print("Error seleccionando foto: $e");
+      return null;
+    }
+  }
+
+  // Guardar imagen en directorio de la app
+  static Future<String?> saveImageToAppDirectory(File imageFile) async {
+    try {
+      // Obtener directorio de documentos
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final String imagesDirPath = '${appDir.path}/animal_images';
+
+      // Crear directorio si no existe
+      final Directory imagesDir = Directory(imagesDirPath);
+      if (!await imagesDir.exists()) {
+        await imagesDir.create(recursive: true);
+      }
+
+      // Generar nombre único para la imagen
+      final String fileName =
+          'animal_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1000)}.jpg';
+      final String newPath = '${imagesDir.path}/$fileName';
+
+      // Copiar archivo al nuevo directorio
+      final File newImage = await imageFile.copy(newPath);
+
+      print("Imagen guardada en: $newPath");
+      return newPath;
+    } catch (e) {
+      print("Error guardando imagen: $e");
+      return null;
+    }
+  }
+
+  // Eliminar imagen
+  static Future<bool> deleteImage(String imagePath) async {
+    try {
+      final File imageFile = File(imagePath);
+      if (await imageFile.exists()) {
+        await imageFile.delete();
+        print("Imagen eliminada: $imagePath");
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print("Error eliminando imagen: $e");
+      return false;
+    }
+  }
+
+  // Verificar si una imagen existe
+  static Future<bool> imageExists(String? imagePath) async {
+    if (imagePath == null || imagePath.isEmpty) return false;
+    try {
+      final File imageFile = File(imagePath);
+      return await imageFile.exists();
+    } catch (e) {
+      return false;
+    }
+  }
+}
 
 class PagAnimales extends StatelessWidget {
   final List<Map<String, dynamic>> data;
@@ -121,15 +214,19 @@ class PagAnimales extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 12),
       elevation: 2,
       child: ListTile(
-        leading: imagePath != null && imagePath.isNotEmpty
-            ? CircleAvatar(
+        leading: FutureBuilder<bool>(
+          future: ImageService.imageExists(imagePath),
+          builder: (context, snapshot) {
+            if (snapshot.hasData && snapshot.data! && imagePath != null) {
+              return CircleAvatar(
                 radius: 25,
                 backgroundImage: FileImage(File(imagePath)),
                 onBackgroundImageError: (exception, stackTrace) {
                   print("Error cargando imagen: $exception");
                 },
-              )
-            : CircleAvatar(
+              );
+            } else {
+              return CircleAvatar(
                 backgroundColor: const Color.fromARGB(
                   255,
                   182,
@@ -140,7 +237,10 @@ class PagAnimales extends StatelessWidget {
                   Icons.pets,
                   color: const Color.fromARGB(255, 137, 77, 77),
                 ),
-              ),
+              );
+            }
+          },
+        ),
         title: Text(
           tganado['nombregdo'] ?? 'Sin nombre',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -462,38 +562,41 @@ class PagAnimales extends StatelessWidget {
   ) {
     return Column(
       children: [
-        if (selectedImage != null)
-          Container(
-            height: 150,
-            width: 150,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.file(
-                selectedImage,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.error, color: Colors.red, size: 50);
-                },
-              ),
-            ),
-          )
-        else
-          Container(
-            height: 150,
-            width: 150,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey),
-              color: Colors.grey[100],
-            ),
-            child: Icon(Icons.photo_camera, size: 50, color: Colors.grey[400]),
+        // Vista previa de la imagen
+        Container(
+          height: 150,
+          width: 150,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey),
+            color: Colors.grey[100],
           ),
+          child: FutureBuilder<bool>(
+            future: selectedImage != null
+                ? ImageService.imageExists(imagePath)
+                : Future.value(false),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data! && selectedImage != null) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(
+                    selectedImage,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildPlaceholderIcon();
+                    },
+                  ),
+                );
+              } else {
+                return _buildPlaceholderIcon();
+              }
+            },
+          ),
+        ),
 
         SizedBox(height: 10),
+
+        // Botones de cámara y galería
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -504,10 +607,19 @@ class PagAnimales extends StatelessWidget {
                   final savedPath = await ImageService.saveImageToAppDirectory(
                     image,
                   );
-                  setState(() {
-                    selectedImage = image;
-                    imagePath = savedPath;
-                  });
+                  if (savedPath != null) {
+                    setState(() {
+                      onImageChanged(image, savedPath);
+                    });
+                    print("Ruta de imagen guardada: $savedPath");
+                  } else {
+                    ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al guardar la imagen'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
               icon: Icon(Icons.camera_alt),
@@ -520,10 +632,19 @@ class PagAnimales extends StatelessWidget {
                   final savedPath = await ImageService.saveImageToAppDirectory(
                     image,
                   );
-                  setState(() {
-                    selectedImage = image;
-                    imagePath = savedPath;
-                  });
+                  if (savedPath != null) {
+                    setState(() {
+                      onImageChanged(image, savedPath);
+                    });
+                    print("Ruta de imagen guardada: $savedPath");
+                  } else {
+                    ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al guardar la imagen'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
               icon: Icon(Icons.photo_library),
@@ -531,18 +652,27 @@ class PagAnimales extends StatelessWidget {
             ),
           ],
         ),
+
+        // Botón para quitar foto
         if (selectedImage != null)
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              // Eliminar archivo físico si existe
+              if (imagePath != null) {
+                await ImageService.deleteImage(imagePath);
+              }
               setState(() {
-                selectedImage = null;
-                imagePath = null;
+                onImageChanged(null, null);
               });
             },
             child: Text('Quitar foto', style: TextStyle(color: Colors.red)),
           ),
       ],
     );
+  }
+
+  Widget _buildPlaceholderIcon() {
+    return Icon(Icons.photo_camera, size: 50, color: Colors.grey[400]);
   }
 
   void _showEditAnimalDialog(

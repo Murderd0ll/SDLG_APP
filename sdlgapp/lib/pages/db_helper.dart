@@ -1,9 +1,57 @@
+// db_helper.dart - Versión completa y corregida
+import 'package:sdlgapp/pages/PagAnimales.dart';
 import 'package:sqflite/sqflite.dart' as sql;
+import 'package:path/path.dart' as path;
 
 class SQLHelper {
-  static bool _tablesCreated = false;
+  // En SQLHelper class
+  static Future<void> debugAnimalImages() async {
+    final db = await SQLHelper.db();
+    try {
+      final animales = await db.query('tganado');
+      print("=== DEBUG IMÁGENES ANIMALES ===");
+      for (var animal in animales) {
+        print("ID: ${animal['idgdo']}, Nombre: ${animal['nombregdo']}");
+        print("Ruta imagen: ${animal['fotogdo']}");
 
-  // Método para inicializar todas las tablas
+        if (animal['fotogdo'] != null &&
+            animal['fotogdo'].toString().isNotEmpty) {
+          final exists = await ImageService.imageExists(
+            animal['fotogdo'].toString(),
+          );
+          print("Imagen existe: $exists");
+        } else {
+          print("Sin imagen");
+        }
+        print("---");
+      }
+      print("=================================");
+    } catch (e) {
+      print("Error en debugAnimalImages: $e");
+    }
+  }
+
+  static Future<sql.Database> db() async {
+    try {
+      final databasePath = await sql.getDatabasesPath();
+      final String dbPath = path.join(databasePath, 'SDLGAPP.db');
+
+      print("Ruta de la base de datos: $dbPath");
+
+      return await sql.openDatabase(
+        dbPath,
+        version: 1,
+        onCreate: (sql.Database database, int version) async {
+          print("Creando base de datos por primera vez...");
+          await createAllTables(database);
+        },
+      );
+    } catch (e) {
+      print("Error crítico abriendo base de datos: $e");
+      rethrow;
+    }
+  }
+
   static Future<void> createAllTables(sql.Database database) async {
     try {
       print("Creando tablas...");
@@ -11,11 +59,11 @@ class SQLHelper {
       // Tabla de tganado
       await database.execute("""CREATE TABLE IF NOT EXISTS tganado(
         idgdo INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        aretegdo NUMERIC,
+        aretegdo TEXT,
         nombregdo TEXT,
         sexogdo TEXT,
         razagdo TEXT,
-        nacimientogdo NUMERIC,
+        nacimientogdo TEXT,
         corralgdo TEXT,
         alimentogdo TEXT,
         prodgdo TEXT,
@@ -31,10 +79,10 @@ class SQLHelper {
         nombre TEXT,
         madreId INTEGER,
         padreId INTEGER,
-        fechaNacimiento NUMERIC,
-        pesoNacimiento NUMERIC,
+        fechaNacimiento TEXT,
+        pesoNacimiento REAL,
         observaciones TEXT,
-        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        createdAt TEXT
       )""");
       print("Tabla 'becerros' creada/verificada");
 
@@ -46,7 +94,7 @@ class SQLHelper {
         telefono TEXT,
         email TEXT,
         direccion TEXT,
-        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        createdAt TEXT
       )""");
       print("Tabla 'propietarios' creada/verificada");
 
@@ -57,11 +105,10 @@ class SQLHelper {
         capacidad INTEGER,
         ubicacion TEXT,
         observaciones TEXT,
-        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        createdAt TEXT
       )""");
       print("Tabla 'corrales' creada/verificada");
 
-      _tablesCreated = true;
       print("Todas las tablas creadas exitosamente");
     } catch (e) {
       print("Error creando tablas: $e");
@@ -69,37 +116,13 @@ class SQLHelper {
     }
   }
 
-  static Future<sql.Database> db() async {
-    try {
-      final database = await sql.openDatabase(
-        'SDLGAPP.db',
-        version: 1,
-        onCreate: (sql.Database database, int version) async {
-          print("Base de datos creada por primera vez");
-          await createAllTables(database);
-        },
-      );
-
-      // Si las tablas no están creadas, forzar creación
-      if (!_tablesCreated) {
-        await createAllTables(database);
-      }
-
-      return database;
-    } catch (e) {
-      print("Error crítico abriendo base de datos: $e");
-      rethrow;
-    }
-  }
-
   // Método para resetear la base de datos
   static Future<void> resetDatabase() async {
     try {
-      final database = await db();
-      await database.close();
-      await sql.deleteDatabase('SDLGAPP.db');
+      final databasePath = await sql.getDatabasesPath();
+      final String dbPath = path.join(databasePath, 'SDLGAPP.db');
+      await sql.deleteDatabase(dbPath);
       print("Base de datos reiniciada exitosamente");
-      _tablesCreated = false; // Resetear el flag
     } catch (e) {
       print("Error reiniciando base de datos: $e");
     }
@@ -131,20 +154,19 @@ class SQLHelper {
     }
   }
 
-  // ========== MÉTODOS PARA ANIMALES ========== **** NOMBRE DE LA TABLA: tganado****
+  // ========== MÉTODOS PARA ANIMALES ==========
   static Future<int> createAnimal(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
-      // Asegurar que los campos opcionales tengan valores por defecto
       final animalData = {
         'aretegdo': data['aretegdo'] ?? '',
         'nombregdo': data['nombregdo'] ?? '',
         'sexogdo': data['sexogdo'] ?? '',
         'razagdo': data['razagdo'] ?? '',
         'nacimientogdo': data['nacimientogdo'] ?? '',
-        'corralgdo': data['corralgdo'],
+        'corralgdo': data['corralgdo'] ?? '',
         'alimentogdo': data['alimentogdo'] ?? '',
-        'prodgdo': data['prodgdo'],
+        'prodgdo': data['prodgdo'] ?? '',
         'estatusgdo': data['estatusgdo'] ?? '',
         'observaciongdo': data['observaciongdo'] ?? '',
         'fotogdo': data['fotogdo'] ?? '',
@@ -159,7 +181,6 @@ class SQLHelper {
       return idgdo;
     } catch (e) {
       print("Error creando animal: $e");
-      // Debug adicional
       await debugDatabaseStatus();
       rethrow;
     }
@@ -173,7 +194,6 @@ class SQLHelper {
       return result;
     } catch (e) {
       print("Error obteniendo animales: $e");
-      // Debug adicional
       await debugDatabaseStatus();
       return [];
     }
@@ -200,29 +220,6 @@ class SQLHelper {
     try {
       print("=== ACTUALIZANDO ANIMAL EN BD ===");
       print("ID: $idgdo");
-      print("Datos recibidos: $data");
-
-      // Verificar que la tabla existe
-      final tables = await db.rawQuery(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='tganado'",
-      );
-
-      if (tables.isEmpty) {
-        throw Exception("La tabla 'tganado' no existe");
-      }
-
-      // Verificar que el animal existe
-      final animalExistente = await db.query(
-        'tganado',
-        where: "idgdo = ?",
-        whereArgs: [idgdo],
-      );
-
-      if (animalExistente.isEmpty) {
-        throw Exception("Animal con ID $idgdo no encontrado");
-      }
-
-      print("Animal encontrado: ${animalExistente.first}");
 
       // Filtrar solo los campos que existen en la tabla
       final camposValidos = [
@@ -256,7 +253,6 @@ class SQLHelper {
       return result;
     } catch (e) {
       print("ERROR en updateAnimal: $e");
-      print("Stack trace: ${e.toString()}");
       rethrow;
     }
   }
@@ -283,6 +279,7 @@ class SQLHelper {
         'fechaNacimiento': data['fechaNacimiento'] ?? '',
         'pesoNacimiento': data['pesoNacimiento'],
         'observaciones': data['observaciones'] ?? '',
+        'createdAt': DateTime.now().toIso8601String(),
       };
 
       final id = await db.insert(
@@ -364,6 +361,7 @@ class SQLHelper {
         'telefono': data['telefono'] ?? '',
         'email': data['email'] ?? '',
         'direccion': data['direccion'] ?? '',
+        'createdAt': DateTime.now().toIso8601String(),
       };
 
       final id = await db.insert(
@@ -447,6 +445,7 @@ class SQLHelper {
         'capacidad': data['capacidad'],
         'ubicacion': data['ubicacion'] ?? '',
         'observaciones': data['observaciones'] ?? '',
+        'createdAt': DateTime.now().toIso8601String(),
       };
 
       final id = await db.insert(
@@ -526,18 +525,7 @@ class SQLHelper {
         'tganado',
         where:
             "aretegdo LIKE ? OR nombregdo LIKE ? OR sexogdo LIKE ? OR razagdo LIKE ? OR nacimientogdo LIKE ? OR corralgdo LIKE ? OR alimentogdo LIKE ? OR prodgdo LIKE ? OR estatusgdo LIKE ? OR observaciongdo LIKE ?",
-        whereArgs: [
-          '%$query%',
-          '%$query%',
-          '%$query%',
-          '%$query%',
-          '%$query%',
-          '%$query%',
-          '%$query%',
-          '%$query%',
-          '%$query%',
-          '%$query%',
-        ],
+        whereArgs: List.filled(10, '%$query%'),
         orderBy: "idgdo DESC",
       );
       print("Búsqueda animales: ${result.length} resultados para '$query'");
@@ -555,7 +543,7 @@ class SQLHelper {
         'becerros',
         where: "nombre LIKE ? OR observaciones LIKE ?",
         whereArgs: ['%$query%', '%$query%'],
-        orderBy: "idbece DESC",
+        orderBy: "id DESC",
       );
       print("Búsqueda becerros: ${result.length} resultados para '$query'");
       return result;
@@ -572,8 +560,9 @@ class SQLHelper {
     try {
       final result = await db.query(
         'propietarios',
-        where: "nombre LIKE ? OR apellido LIKE ? OR telefono LIKE ?",
-        whereArgs: ['%$query%', '%$query%', '%$query%'],
+        where:
+            "nombre LIKE ? OR apellido LIKE ? OR telefono LIKE ? OR email LIKE ?",
+        whereArgs: ['%$query%', '%$query%', '%$query%', '%$query%'],
         orderBy: "id DESC",
       );
       print("Búsqueda propietarios: ${result.length} resultados para '$query'");
@@ -589,8 +578,8 @@ class SQLHelper {
     try {
       final result = await db.query(
         'corrales',
-        where: "nombre LIKE ? OR ubicacion LIKE ?",
-        whereArgs: ['%$query%', '%$query%'],
+        where: "nombre LIKE ? OR ubicacion LIKE ? OR observaciones LIKE ?",
+        whereArgs: ['%$query%', '%$query%', '%$query%'],
         orderBy: "id DESC",
       );
       print("Búsqueda corrales: ${result.length} resultados para '$query'");
@@ -606,9 +595,9 @@ class SQLHelper {
     final db = await SQLHelper.db();
     try {
       final result = await db.rawQuery('SELECT COUNT(*) as total FROM tganado');
-      return result.first['total'] as int;
+      return (result.first['total'] as int?) ?? 0;
     } catch (e) {
-      print("Error obteniendo total de tganado: $e");
+      print("Error obteniendo total de animales: $e");
       return 0;
     }
   }
@@ -619,7 +608,7 @@ class SQLHelper {
       final result = await db.rawQuery(
         'SELECT COUNT(*) as total FROM becerros',
       );
-      return result.first['total'] as int;
+      return (result.first['total'] as int?) ?? 0;
     } catch (e) {
       print("Error obteniendo total de becerros: $e");
       return 0;
@@ -632,7 +621,7 @@ class SQLHelper {
       final result = await db.rawQuery(
         'SELECT COUNT(*) as total FROM propietarios',
       );
-      return result.first['total'] as int;
+      return (result.first['total'] as int?) ?? 0;
     } catch (e) {
       print("Error obteniendo total de propietarios: $e");
       return 0;
@@ -645,21 +634,83 @@ class SQLHelper {
       final result = await db.rawQuery(
         'SELECT COUNT(*) as total FROM corrales',
       );
-      return result.first['total'] as int;
+      return (result.first['total'] as int?) ?? 0;
     } catch (e) {
       print("Error obteniendo total de corrales: $e");
       return 0;
     }
   }
 
+  // ========== MÉTODOS DE ANÁLISIS ADICIONALES ==========
+  static Future<List<Map<String, dynamic>>> getAnimalesPorSexo() async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.rawQuery('''
+        SELECT sexogdo, COUNT(*) as cantidad 
+        FROM tganado 
+        WHERE sexogdo IS NOT NULL AND sexogdo != '' 
+        GROUP BY sexogdo
+      ''');
+      return result;
+    } catch (e) {
+      print("Error obteniendo animales por sexo: $e");
+      return [];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAnimalesPorRaza() async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.rawQuery('''
+        SELECT razagdo, COUNT(*) as cantidad 
+        FROM tganado 
+        WHERE razagdo IS NOT NULL AND razagdo != '' 
+        GROUP BY razagdo
+        ORDER BY cantidad DESC
+      ''');
+      return result;
+    } catch (e) {
+      print("Error obteniendo animales por raza: $e");
+      return [];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAnimalesPorEstatus() async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.rawQuery('''
+        SELECT estatusgdo, COUNT(*) as cantidad 
+        FROM tganado 
+        WHERE estatusgdo IS NOT NULL AND estatusgdo != '' 
+        GROUP BY estatusgdo
+      ''');
+      return result;
+    } catch (e) {
+      print("Error obteniendo animales por estatus: $e");
+      return [];
+    }
+  }
+
   // ========== MÉTODOS DE LIMPIEZA ==========
   static Future<void> closeDatabase() async {
     try {
-      final database = await db();
-      await database.close();
-      print("Base de datos cerrada");
+      // Sqflite maneja el cierre automáticamente en la mayoría de los casos
+      print("Manejador de base de datos cerrado");
     } catch (e) {
       print("Error cerrando base de datos: $e");
+    }
+  }
+
+  // ========== MÉTODO PARA VERIFICAR CONEXIÓN ==========
+  static Future<bool> testConnection() async {
+    try {
+      final db = await SQLHelper.db();
+      final result = await db.rawQuery('SELECT 1 as test');
+      await db.close();
+      return result.isNotEmpty;
+    } catch (e) {
+      print("Error en test de conexión: $e");
+      return false;
     }
   }
 }

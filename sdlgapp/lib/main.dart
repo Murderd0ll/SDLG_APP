@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 //Importación de las páginas del bottom navigation bar
 import 'package:sdlgapp/pages/PagAnimales.dart';
@@ -13,8 +12,6 @@ import 'package:sdlgapp/pages/PagPropietarios.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
 
 void main() {
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
   runApp(SDLGAPP());
 }
 
