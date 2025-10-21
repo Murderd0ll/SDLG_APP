@@ -11,7 +11,7 @@ class SQLHelper {
     try {
       final databasePath = await sql.getDatabasesPath();
       final String dbPath = path.join(databasePath, 'SDLGAPP.db');
-
+      // estas partes nomás es como para verlo desde la terminal y checar que todo esté bien con la bdd
       print("=== INFORMACIÓN DETALLADA DE LA BD ===");
       print("📁 Directorio de bases de datos: $databasePath");
       print("🗂️ Ruta completa de la BD: $dbPath");
@@ -29,7 +29,7 @@ class SQLHelper {
         print("❌ El archivo de BD NO existe aún");
       }
 
-      // Verificar el directorio
+      // aqui se verifica el directorio y q es lo q contiene
       final dir = Directory(databasePath);
       final dirExists = await dir.exists();
       print("📂 ¿Directorio existe?: $dirExists");
@@ -43,16 +43,17 @@ class SQLHelper {
             print("   - ${file.path} (${fileStat.size} bytes)");
           }
         }
-      }
+      } //este nomás es el cierre xd tiene un marco para ver donde termina
       print("======================================");
     } catch (e) {
+      //este es un catch por si hay algun error que diga en donde está
       print("❌ Error en debugDatabaseLocation: $e");
     }
   }
 
   static Future<void> exportRealDatabase() async {
     try {
-      // Primero, obtener la ruta real de la base de datos
+      // Aquí se obtiene la ruta "real" de la base de datos, en donde se está guardando en el telefono
       final databasePath = await sql.getDatabasesPath();
       final dbFile = File('$databasePath/SDLGAPP.db');
 
@@ -61,21 +62,21 @@ class SQLHelper {
         return;
       }
 
-      // Verificar que es un archivo SQLite válido
+      // Verificar que es un archivo SQLite válido basado en el tamaño
       final stat = await dbFile.stat();
       print("📊 Tamaño real de la BD: ${stat.size} bytes");
 
       if (stat.size < 8192) {
         // SQLite mínimo suele ser >8KB
-        print("❌ Archivo de BD demasiado pequeño, posiblemente corrupto");
+        print("❌ Archivo de BD demasiado pequeño, quizás esté corrupto");
         return;
       }
 
-      // Obtener directorio de descargas
+      // esto es para obtener el directorio de descargas del telefono
       final downloadsDirectory = await getDownloadsDirectory();
       final exportFile = File('${downloadsDirectory?.path}/SDLGAPP_export.db');
 
-      // COPIAR el archivo real de la base de datos
+      // Este copia el archivo de la base de datos
       await dbFile.copy(exportFile.path);
 
       print("✅ Base de datos exportada correctamente");
@@ -85,7 +86,10 @@ class SQLHelper {
       // También crear un reporte de texto con los datos
       await _createDataReport();
 
-      // Compartir el archivo REAL de la base de datos
+      // Compartir el archivo de la base de datos, este da la opción de mandarlo por los medios q te permita el celular
+      //el emulador deja mandarlo por correo, en un telefono real te deja mandarlo en otras opciones xD ya cuando lo mandas
+      //lo puedes decargar desde la compu y checar la bdd si es necesario, iwal despues podemos trabajar con esto para ver
+      //lo de pasar los datos entre telefono y computadora
       await Share.shareXFiles(
         [XFile(exportFile.path)],
         subject: 'Base de Datos SDLGAPP - Archivo Real',
@@ -98,11 +102,12 @@ class SQLHelper {
     } catch (e) {
       print("❌ Error exportando base de datos real: $e");
 
-      // Fallback: exportar solo los datos
+      // esto es para exportar los datos como texto en caso de que falle lo de la bdd real
       await exportDataAsText();
     }
   }
 
+  // este método es para crear un reporte de texto con los datos de la bdd
   static Future<void> _createDataReport() async {
     try {
       final db = await SQLHelper.db();
@@ -155,6 +160,7 @@ class SQLHelper {
     }
   }
 
+  // este método es para exportar los datos como texto en caso de que falle lo de la bdd real
   static Future<void> exportDataAsText() async {
     try {
       final db = await SQLHelper.db();
@@ -163,7 +169,7 @@ class SQLHelper {
 
       final animales = await db.query('tganado');
       final salud = await db.query('tsalud');
-      final becerros = await db.query('becerros');
+      final becerros = await db.query('tbecerros');
 
       final content = StringBuffer();
       content.writeln('=== DATOS COMPLETOS SDLGAPP ===');
@@ -204,6 +210,7 @@ class SQLHelper {
     }
   }
 
+  // este método es para ver lo de las imágenes de los animales y ver si existen o no
   static Future<void> debugAnimalImages() async {
     final db = await SQLHelper.db();
     try {
@@ -251,11 +258,12 @@ class SQLHelper {
     }
   }
 
+  //aca empieza todo lo de la creación de las tablas de las base de datos y los metodos de editar y eliminar ***************************
   static Future<void> createAllTables(sql.Database database) async {
     try {
       print("Creando tablas...");
 
-      // ************* Tabla de tganado *************
+      // ************* Tabla de tganado ************* esta ya está completa
       await database.execute("""CREATE TABLE IF NOT EXISTS tganado(
         idgdo INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         aretegdo TEXT,
@@ -272,7 +280,7 @@ class SQLHelper {
       )""");
       print("Tabla 'tganado' creada/verificada");
 
-      // ************* Tabla de salud *************
+      // ************* Tabla de tsalud ************* este ya está completo, es el de los registros de salud de los ANIMALES, no de los becerros
       await database.execute("""CREATE TABLE IF NOT EXISTS tsalud(
       idsalud INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
       areteanimal TEXT NOT NULL,
@@ -285,41 +293,76 @@ class SQLHelper {
     )""");
       print("Tabla 'tsalud' creada/verificada");
 
-      // ************* Tabla de Becerros *************
-      await database.execute("""CREATE TABLE IF NOT EXISTS becerros(
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        nombre TEXT,
-        madreId INTEGER,
-        padreId INTEGER,
-        fechaNacimiento TEXT,
-        pesoNacimiento REAL,
-        observaciones TEXT,
-        createdAt TEXT
+      // ************* Tabla de tbecerros *************
+      await database.execute("""CREATE TABLE IF NOT EXISTS tbecerros(
+        idbece INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        aretebece TEXT,
+        nombrebece TEXT,
+        pesobece TEXT,
+        sexobece TEXT,
+        razabece TEXT,
+        nacimientobece TEXT,
+        corralbece TEXT,
+        estatusbece TEXT,
+        aretemadre TEXT,
+        observacionbece TEXT,
+        fotobece TEXT
       )""");
-      print("Tabla 'becerros' creada/verificada");
+      print("Tabla 'tbecerros' creada/verificada");
 
-      // ************* Tabla de Propietarios *************
-      await database.execute("""CREATE TABLE IF NOT EXISTS propietarios(
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        nombre TEXT,
-        apellido TEXT,
-        telefono TEXT,
-        email TEXT,
-        direccion TEXT,
-        createdAt TEXT
+      // ************* Tabla de tpropietarios *************
+      await database.execute("""CREATE TABLE IF NOT EXISTS tpropietarios(
+        idprop INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        nombreprop TEXT,
+        telprop TEXT,
+        correoprop TEXT,
+        dirprop TEXT,
+        rfcprop TEXT,
+        psgprop TEXT,
+        uppprop TEXT,
+        observacionprop TEXT
       )""");
       print("Tabla 'propietarios' creada/verificada");
 
-      // ************* Tabla de Corrales *************
-      await database.execute("""CREATE TABLE IF NOT EXISTS corrales(
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        nombre TEXT,
-        capacidad INTEGER,
-        ubicacion TEXT,
-        observaciones TEXT,
-        createdAt TEXT
+      // ************* Tabla de tcorrales ************* identcorral es el numero identificador del corral pq segun con eso los idntifican
+      //pero igual puse nombre por si acaso
+      await database.execute("""CREATE TABLE IF NOT EXISTS tcorrales(
+        idcorral INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        identcorral TEXT, 
+        nomcorral TEXT,
+        ubicorral TEXT,
+        capmax TEXT,
+        capactual TEXT,
+        fechamant TEXT,
+        condicion TEXT,
+        observacioncorral TEXT
       )""");
       print("Tabla 'corrales' creada/verificada");
+
+      // ************* Tabla de treprod  ************* REPRODUCCION SOLO DE HEMBRAS
+      //ESTA TABLA es solo para llevar control de reproducción de las hembras
+      await database.execute("""CREATE TABLE IF NOT EXISTS treprod(
+        idreprod INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        cargada TEXT, 
+        cantpartos TEXT,
+        fcargadoactual TEXT,
+        tecnica TEXT,
+        areteanimal TEXT
+      )""");
+      print("Tabla 'treprod' creada/verificada");
+
+      // ************* Tabla de usuarios ************* este es para el log in, no se crearán desde aquí
+      //los datos se jalarán desde la PC y se mandaran al telefono para q los valide
+      await database.execute("""CREATE TABLE IF NOT EXISTS tusuarios(
+        idusuario INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        nombre TEXT,
+        telefono TEXT,
+        usuario TEXT,
+        pass TEXT,
+        rol TEXT
+      )""");
+      print("Tabla 'tusuarios' creada/verificada");
+
       //Si todas las tablas se crearon en la terminal mostrara este mensaje
       print("Todas las tablas creadas exitosamente");
     } catch (e) {
@@ -331,7 +374,7 @@ class SQLHelper {
 
   // Este es el método para resetear la base de datos, este sirve para estar haciendo pruebas cuando cambias datos o así de q necesites
   // estar borrando la bdd y volver a crearla de 0, pero si ya no lo ocupas lo quitas en el main.dart
-  //(es en la linea 57 mas o menos xD dice algo como await SQLHelper.resetDatabase(); , a ese nomás lo comentas y
+  // (es en la linea 57 mas o menos xD dice algo como await SQLHelper.resetDatabase(); , a ese nomás lo comentas y
   // ya no se reiniciará la bdd)
   static Future<void> resetDatabase() async {
     try {
@@ -475,6 +518,8 @@ class SQLHelper {
   }
 
   // ************* Métodos para animales xd *************
+
+  //este es para crear un animal
   static Future<int> createAnimal(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
@@ -506,6 +551,8 @@ class SQLHelper {
     }
   }
 
+  //este es para saber cuantos datos hay en la tabla de animales
+  //nomas se ve en la terminal y sirve tbn para q muestre o no un mensaje en la interfaz
   static Future<List<Map<String, dynamic>>> getAllAnimales() async {
     final db = await SQLHelper.db();
     try {
@@ -519,6 +566,8 @@ class SQLHelper {
     }
   }
 
+  //obtener los datos de un animal en especifico, sirve para
+  //cuando se va a editar o eliminar
   static Future<List<Map<String, dynamic>>> getAnimal(int idgdo) async {
     final db = await SQLHelper.db();
     try {
@@ -541,7 +590,8 @@ class SQLHelper {
       print("=== ACTUALIZANDO ANIMAL EN BD ===");
       print("ID: $idgdo");
 
-      // Filtrar solo los campos que existen en la tabla
+      // este es para filtrar los campos que se van a actualizar
+      // para evitar errores si se manda algun campo que no existe en la tabla
       final camposValidos = [
         'aretegdo',
         'nombregdo',
@@ -577,6 +627,7 @@ class SQLHelper {
     }
   }
 
+  //eliminar animal
   static Future<void> deleteAnimal(int idgdo) async {
     final db = await SQLHelper.db();
     try {
@@ -589,36 +640,43 @@ class SQLHelper {
   }
 
   // ************* Métodos para becerros *************
+
+  //Este es para crear un becerro
   static Future<int> createBecerro(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
       final becerroData = {
-        'nombre': data['nombre'] ?? '',
-        'madreId': data['madreId'],
-        'padreId': data['padreId'],
-        'fechaNacimiento': data['fechaNacimiento'] ?? '',
-        'pesoNacimiento': data['pesoNacimiento'],
-        'observaciones': data['observaciones'] ?? '',
-        'createdAt': DateTime.now().toIso8601String(),
+        'aretebece': data['aretebece'] ?? '',
+        'nombrebece': data['nombrebece'] ?? '',
+        'pesobece': data['pesobece'] ?? '',
+        'sexobece': data['sexobece'] ?? '',
+        'razabece': data['razabece'] ?? '',
+        'nacimientobece': data['nacimientobece'] ?? '',
+        'corralbece': data['corralbece'] ?? '',
+        'estatusbece': data['estatusbece'] ?? '',
+        'aretemadre': data['aretemadre'] ?? '',
+        'observacionbece': data['observacionbece'] ?? '',
       };
 
-      final id = await db.insert(
-        'becerros',
+      final idbece = await db.insert(
+        'tbecerros',
         becerroData,
         conflictAlgorithm: sql.ConflictAlgorithm.replace,
       );
-      print("Becerro creado con ID: $id");
-      return id;
+      print("Becerro creado con ID: $idbece");
+      return idbece;
     } catch (e) {
       print("Error creando becerro: $e");
       rethrow;
     }
   }
 
+  //este es para saber cuantos datos hay en esta tabla xD
+  //nomás se muestra en la terminal y ayuda a poner el mensaje de "no hay becerros" en la interfaz
   static Future<List<Map<String, dynamic>>> getAllBecerros() async {
     final db = await SQLHelper.db();
     try {
-      final result = await db.query('becerros', orderBy: "id DESC");
+      final result = await db.query('tbecerros', orderBy: "idbece DESC");
       print("Becerros obtenidos: ${result.length} registros");
       return result;
     } catch (e) {
@@ -627,13 +685,14 @@ class SQLHelper {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getBecerro(int id) async {
+  //este sirve para obtener los datos por ejemplo cuando hay q editar o eliminar
+  static Future<List<Map<String, dynamic>>> getBecerro(int idbece) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.query(
-        'becerros',
-        where: "id = ?",
-        whereArgs: [id],
+        'tbecerros',
+        where: "idbece = ?",
+        whereArgs: [idbece],
         limit: 1,
       );
       return result;
@@ -643,14 +702,18 @@ class SQLHelper {
     }
   }
 
-  static Future<int> updateBecerro(int id, Map<String, dynamic> data) async {
+  //este es el de actualizar
+  static Future<int> updateBecerro(
+    int idbece,
+    Map<String, dynamic> data,
+  ) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.update(
-        'becerros',
+        'tbecerros',
         data,
-        where: "id = ?",
-        whereArgs: [id],
+        where: "idbece = ?",
+        whereArgs: [idbece],
       );
       print("Becerro actualizado: $result filas afectadas");
       return result;
@@ -660,11 +723,12 @@ class SQLHelper {
     }
   }
 
-  static Future<void> deleteBecerro(int id) async {
+  //este es el de eliminar
+  static Future<void> deleteBecerro(int idbece) async {
     final db = await SQLHelper.db();
     try {
-      await db.delete("becerros", where: "id = ?", whereArgs: [id]);
-      print("Becerro eliminado con ID: $id");
+      await db.delete("tbecerros", where: "idbece = ?", whereArgs: [idbece]);
+      print("Becerro eliminado con ID: $idbece");
     } catch (e) {
       print("Error eliminando becerro: $e");
       rethrow;
@@ -672,35 +736,41 @@ class SQLHelper {
   }
 
   // ************* Métodos para propietarios *************
+
+  //este es para crear un nuevo propietario
   static Future<int> createPropietario(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
       final propietarioData = {
-        'nombre': data['nombre'] ?? '',
-        'apellido': data['apellido'] ?? '',
-        'telefono': data['telefono'] ?? '',
-        'email': data['email'] ?? '',
-        'direccion': data['direccion'] ?? '',
-        'createdAt': DateTime.now().toIso8601String(),
+        'nombreprop': data['nombreprop'] ?? '',
+        'telprop': data['telprop'] ?? '',
+        'correoprop': data['correoprop'] ?? '',
+        'dirprop': data['dirprop'] ?? '',
+        'rfcprop': data['rfcprop'] ?? '',
+        'psgprop': data['psgprop'] ?? '',
+        'uppprop': data['uppprop'] ?? '',
+        'observacionprop': data['observacionprop'] ?? '',
       };
 
-      final id = await db.insert(
-        'propietarios',
+      final idprop = await db.insert(
+        'tpropietarios',
         propietarioData,
         conflictAlgorithm: sql.ConflictAlgorithm.replace,
       );
-      print("Propietario creado con ID: $id");
-      return id;
+      print("Propietario creado con ID: $idprop");
+      return idprop;
     } catch (e) {
       print("Error creando propietario: $e");
       rethrow;
     }
   }
 
+  //este es para obtener todos los propietarios
+  //sirve para mostrar cuantos hay y poner el mensaje de "no hay propietarios" en la interfaz
   static Future<List<Map<String, dynamic>>> getAllPropietarios() async {
     final db = await SQLHelper.db();
     try {
-      final result = await db.query('propietarios', orderBy: "id DESC");
+      final result = await db.query('tpropietarios', orderBy: "idprop DESC");
       print("Propietarios obtenidos: ${result.length} registros");
       return result;
     } catch (e) {
@@ -709,13 +779,14 @@ class SQLHelper {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getPropietario(int id) async {
+  //este es para obtener los datos del propietario seleccionado
+  static Future<List<Map<String, dynamic>>> getPropietario(int idprop) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.query(
-        'propietarios',
-        where: "id = ?",
-        whereArgs: [id],
+        'tpropietarios',
+        where: "idprop = ?",
+        whereArgs: [idprop],
         limit: 1,
       );
       return result;
@@ -725,17 +796,18 @@ class SQLHelper {
     }
   }
 
+  //este es para actualizar un propietario
   static Future<int> updatePropietario(
-    int id,
+    int idprop,
     Map<String, dynamic> data,
   ) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.update(
-        'propietarios',
+        'tpropietarios',
         data,
-        where: "id = ?",
-        whereArgs: [id],
+        where: "idprop = ?",
+        whereArgs: [idprop],
       );
       print("Propietario actualizado: $result filas afectadas");
       return result;
@@ -745,11 +817,16 @@ class SQLHelper {
     }
   }
 
-  static Future<void> deletePropietario(int id) async {
+  //este es para eliminar un propietario
+  static Future<void> deletePropietario(int idprop) async {
     final db = await SQLHelper.db();
     try {
-      await db.delete("propietarios", where: "id = ?", whereArgs: [id]);
-      print("Propietario eliminado con ID: $id");
+      await db.delete(
+        "tpropietarios",
+        where: "idprop = ?",
+        whereArgs: [idprop],
+      );
+      print("Propietario eliminado con ID: $idprop");
     } catch (e) {
       print("Error eliminando propietario: $e");
       rethrow;
@@ -757,6 +834,7 @@ class SQLHelper {
   }
 
   // ************* Métodos para corrales *************
+  //este es para crear un nuevo corral
   static Future<int> createCorral(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
@@ -781,6 +859,8 @@ class SQLHelper {
     }
   }
 
+  //este es para obtener todos los corrales
+  //sirve para mostrar cuantos hay y poner el mensaje de "no hay corrales" en la interfaz
   static Future<List<Map<String, dynamic>>> getAllCorrales() async {
     final db = await SQLHelper.db();
     try {
@@ -793,6 +873,7 @@ class SQLHelper {
     }
   }
 
+  //este es para obtener los datos del corral seleccionado
   static Future<List<Map<String, dynamic>>> getCorral(int id) async {
     final db = await SQLHelper.db();
     try {
@@ -809,6 +890,7 @@ class SQLHelper {
     }
   }
 
+  //este es para actualizar un corral en especifico
   static Future<int> updateCorral(int id, Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
     try {
@@ -826,6 +908,7 @@ class SQLHelper {
     }
   }
 
+  //este es para eliminar el corral seleccionado
   static Future<void> deleteCorral(int id) async {
     final db = await SQLHelper.db();
     try {
@@ -838,6 +921,8 @@ class SQLHelper {
   }
 
   // ************* Métodos de búsqueda *************
+
+  //búsqueda general en animales
   static Future<List<Map<String, dynamic>>> searchAnimales(String query) async {
     final db = await SQLHelper.db();
     try {
@@ -856,14 +941,16 @@ class SQLHelper {
     }
   }
 
+  //búsqueda general en becerros
   static Future<List<Map<String, dynamic>>> searchBecerros(String query) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.query(
-        'becerros',
-        where: "nombre LIKE ? OR observaciones LIKE ?",
-        whereArgs: ['%$query%', '%$query%'],
-        orderBy: "id DESC",
+        'tbecerros',
+        where:
+            "aretebece LIKE ? OR nombrebece LIKE ? OR sexobece LIKE ? OR observacionbece LIKE ?",
+        whereArgs: ['%$query%', '%$query%', '%$query%', '%$query%'],
+        orderBy: "idbece DESC",
       );
       print("Búsqueda becerros: ${result.length} resultados para '$query'");
       return result;
@@ -873,17 +960,27 @@ class SQLHelper {
     }
   }
 
+  //búsqueda general en propietarios
   static Future<List<Map<String, dynamic>>> searchPropietarios(
     String query,
   ) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.query(
-        'propietarios',
+        'tpropietarios',
         where:
-            "nombre LIKE ? OR apellido LIKE ? OR telefono LIKE ? OR email LIKE ?",
-        whereArgs: ['%$query%', '%$query%', '%$query%', '%$query%'],
-        orderBy: "id DESC",
+            "nombreprop LIKE ? OR telprop LIKE ? OR correoprop LIKE ? OR dirprop LIKE ? OR LIKE rfcprop LIKE ? OR psgprop LIKE ? OR uppprop LIKE ? OR observacionprop LIKE ?",
+        whereArgs: [
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+        ],
+        orderBy: "idprop DESC",
       );
       print("Búsqueda propietarios: ${result.length} resultados para '$query'");
       return result;
@@ -893,14 +990,24 @@ class SQLHelper {
     }
   }
 
+  //búsqueda general en corrales
   static Future<List<Map<String, dynamic>>> searchCorrales(String query) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.query(
         'corrales',
-        where: "nombre LIKE ? OR ubicacion LIKE ? OR observaciones LIKE ?",
-        whereArgs: ['%$query%', '%$query%', '%$query%'],
-        orderBy: "id DESC",
+        where:
+            "identcorral LIKE ? OR nomcorral LIKE ? OR ubicorral LIKE ? OR condicion LIKE ? OR observacioncorral LIKE ? OR capmax LIKE ? OR capactual LIKE ?",
+        whereArgs: [
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+        ],
+        orderBy: "idcorral DESC",
       );
       print("Búsqueda corrales: ${result.length} resultados para '$query'");
       return result;
@@ -910,7 +1017,9 @@ class SQLHelper {
     }
   }
 
-  // ************* Métodos de estadísticas/informes *************
+  // ************* Métodos de estadísticas/informes ************* ESTE ES para las estadisticas del inicio xd
+
+  //este es para obtener el total de animales en la tabla de tganado
   static Future<int> getTotalAnimales() async {
     final db = await SQLHelper.db();
     try {
@@ -922,11 +1031,12 @@ class SQLHelper {
     }
   }
 
+  //este es para obtener el total de becerros en la tabla de tbecerros
   static Future<int> getTotalBecerros() async {
     final db = await SQLHelper.db();
     try {
       final result = await db.rawQuery(
-        'SELECT COUNT(*) as total FROM becerros',
+        'SELECT COUNT(*) as total FROM tbecerros',
       );
       return (result.first['total'] as int?) ?? 0;
     } catch (e) {
@@ -935,24 +1045,26 @@ class SQLHelper {
     }
   }
 
+  //este es para obtener el total de propietarios en la tabla de tpropietarios
   static Future<int> getTotalPropietarios() async {
     final db = await SQLHelper.db();
     try {
       final result = await db.rawQuery(
-        'SELECT COUNT(*) as total FROM propietarios',
+        'SELECT COUNT(*) as total FROM tpropietarios',
       );
       return (result.first['total'] as int?) ?? 0;
     } catch (e) {
-      print("Error obteniendo total de propietarios: $e");
+      print("Error obteniendo total de tpropietarios: $e");
       return 0;
     }
   }
 
+  //este es para obtener el total de corrales en la tabla de tcorrales
   static Future<int> getTotalCorrales() async {
     final db = await SQLHelper.db();
     try {
       final result = await db.rawQuery(
-        'SELECT COUNT(*) as total FROM corrales',
+        'SELECT COUNT(*) as total FROM tcorrales',
       );
       return (result.first['total'] as int?) ?? 0;
     } catch (e) {
@@ -962,6 +1074,7 @@ class SQLHelper {
   }
 
   // ************* Métodos de análisis adicionales *************
+  //este es para obtener los datos y agruparlos por cantidad de animales por sexo
   static Future<List<Map<String, dynamic>>> getAnimalesPorSexo() async {
     final db = await SQLHelper.db();
     try {
@@ -978,6 +1091,7 @@ class SQLHelper {
     }
   }
 
+  //este es para obtener los datos y agruparlos por cantidad de animales por raza
   static Future<List<Map<String, dynamic>>> getAnimalesPorRaza() async {
     final db = await SQLHelper.db();
     try {
@@ -995,6 +1109,7 @@ class SQLHelper {
     }
   }
 
+  //este es para obtener los datos y agruparlos por cantidad de animales por estatus
   static Future<List<Map<String, dynamic>>> getAnimalesPorEstatus() async {
     final db = await SQLHelper.db();
     try {

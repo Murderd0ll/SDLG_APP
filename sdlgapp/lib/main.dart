@@ -57,7 +57,7 @@ class _InicioState extends State<Inicio> {
     print("=== INICIALIZANDO BASE DE DATOS ===");
 
     await SQLHelper.debugDatabaseLocation();
-    //await SQLHelper.resetDatabase(); // ⚠️ COMENTAR ESTA LÍNEA DESPUÉS DE LA PRIMERA EJECUCIÓN
+    await SQLHelper.resetDatabase(); // ****************COMENTAR ESTA LÍNEA DESPUÉS DE LA PRIMERA EJECUCIÓN*********************************
     print("=== BASE DE DATOS REINICIADA ===");
 
     // Verificar el estado de la base de datos
