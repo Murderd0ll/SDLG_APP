@@ -2,10 +2,8 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
-import 'package:sdlgapp/services/image_service.dart';
 
 class ImageService {
   static final ImagePicker _picker = ImagePicker();
@@ -256,11 +254,15 @@ class PagAnimales extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 4),
+
             if (tganado['aretegdo'] != null)
               Text('Arete: ${tganado['aretegdo']}'),
+
             if (tganado['sexogdo'] != null) Text('Sexo: ${tganado['sexogdo']}'),
+
             if (tganado['nacimientogdo'] != null)
               Text('Nacimiento: ${tganado['nacimientogdo']}'),
+
             SizedBox(height: 4),
             Text(
               'ID: ${tganado['idgdo']}',
@@ -285,7 +287,7 @@ class PagAnimales extends StatelessWidget {
           },
           itemBuilder: (BuildContext context) => [
             PopupMenuItem<String>(
-              value: 'health', // NUEVA OPCIÓN
+              value: 'health', // salud
               child: Row(
                 children: [
                   Icon(Icons.medical_services, color: Colors.green),
@@ -295,7 +297,7 @@ class PagAnimales extends StatelessWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'edit',
+              value: 'edit', //editar
               child: Row(
                 children: [
                   Icon(Icons.edit, color: Colors.blue),
@@ -305,7 +307,7 @@ class PagAnimales extends StatelessWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'delete',
+              value: 'delete', //eliminar
               child: Row(
                 children: [
                   Icon(Icons.delete, color: Colors.red),
