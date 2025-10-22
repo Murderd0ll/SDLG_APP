@@ -105,13 +105,13 @@ class PagCorrales extends StatelessWidget {
       padding: EdgeInsets.all(16),
       itemCount: data.length,
       itemBuilder: (context, index) {
-        final corral = data[index];
-        return _buildCorralCard(corral, context);
+        final tcorral = data[index];
+        return _buildCorralCard(tcorral, context);
       },
     );
   }
 
-  Widget _buildCorralCard(Map<String, dynamic> corral, BuildContext context) {
+  Widget _buildCorralCard(Map<String, dynamic> tcorral, BuildContext context) {
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -129,22 +129,36 @@ class PagCorrales extends StatelessWidget {
           ),
         ),
         title: Text(
-          corral['nombre'] ?? 'Sin nombre',
+          tcorral['nomcorral'] ?? 'Sin nombre',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 4),
-            if (corral['capacidad'] != null)
-              Text('Capacidad: ${corral['capacidad']} animales'),
-            if (corral['ubicacion'] != null)
-              Text('Ubicación: ${corral['ubicacion']}'),
-            if (corral['observaciones'] != null)
-              Text('Observaciones: ${corral['observaciones']}'),
+            if (tcorral['identcorral'] != null)
+              Text('Identificador: ${tcorral['identcorral']}'),
+
+            if (tcorral['ubicorral'] != null)
+              Text('Ubicación: ${tcorral['ubicorral']}'),
+
+            if (tcorral['capmax'] != null)
+              Text('Capacidad: ${tcorral['capmax']}'),
+
+            if (tcorral['capactual'] != null)
+              Text('Capacidad Actual: ${tcorral['capactual']}'),
+
+            if (tcorral['fechamant'] != null)
+              Text('Fecha de Mantenimiento: ${tcorral['fechamant']}'),
+
+            if (tcorral['condicion'] != null)
+              Text('Condición: ${tcorral['condicion']}'),
+
+            if (tcorral['observacioncorral'] != null)
+              Text('Observaciones: ${tcorral['observacioncorral']}'),
             SizedBox(height: 4),
             Text(
-              'ID: ${corral['id']}',
+              'ID: ${tcorral['idcorral']}',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
@@ -153,9 +167,9 @@ class PagCorrales extends StatelessWidget {
           icon: Icon(Icons.more_vert),
           onSelected: (value) {
             if (value == 'edit') {
-              _showEditCorralDialog(context, corral);
+              _showEditCorralDialog(context, tcorral);
             } else if (value == 'delete') {
-              _showDeleteConfirmation(context, corral);
+              _showDeleteConfirmation(context, tcorral);
             }
           },
           itemBuilder: (BuildContext context) => [
@@ -198,14 +212,14 @@ class PagCorrales extends StatelessWidget {
         ];
       }
 
-      return resultados.map((corral) {
+      return resultados.map((tcorral) {
         return ListTile(
           leading: Icon(
             Icons.fence,
             color: const Color.fromARGB(255, 137, 119, 77),
           ),
-          title: Text(corral['nombre'] ?? 'Sin nombre'),
-          subtitle: Text('Capacidad: ${corral['capacidad']} animales'),
+          title: Text(tcorral['nomcorral'] ?? 'Sin nombre'),
+          subtitle: Text('${tcorral['identcorral']} - ${tcorral['capactual']}'),
           onTap: () {
             // Aquí puedes navegar a los detalles del corral
           },
@@ -222,10 +236,14 @@ class PagCorrales extends StatelessWidget {
   }
 
   void _showAddCorralDialog(BuildContext context) {
-    final nombreController = TextEditingController();
-    final capacidadController = TextEditingController();
-    final ubicacionController = TextEditingController();
-    final observacionesController = TextEditingController();
+    final nomcorralController = TextEditingController();
+    final identcorralController = TextEditingController();
+    final ubicorralController = TextEditingController();
+    final capmaxController = TextEditingController();
+    final capactualController = TextEditingController();
+    final fechamantController = TextEditingController();
+    final condicionController = TextEditingController();
+    final observacioncorralController = TextEditingController();
 
     showDialog(
       context: context,
@@ -237,31 +255,70 @@ class PagCorrales extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: nombreController,
+                  controller: nomcorralController,
                   decoration: InputDecoration(
                     labelText: 'Nombre del Corral',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
+
                 TextField(
-                  controller: capacidadController,
+                  controller: identcorralController,
                   decoration: InputDecoration(
-                    labelText: 'Capacidad',
+                    labelText: 'ID del Corral',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
+
                 TextField(
-                  controller: ubicacionController,
+                  controller: ubicorralController,
                   decoration: InputDecoration(
                     labelText: 'Ubicación',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
+
                 TextField(
-                  controller: observacionesController,
+                  controller: capmaxController,
+                  decoration: InputDecoration(
+                    labelText: 'Capacidad máxima',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: capactualController,
+                  decoration: InputDecoration(
+                    labelText: 'Capacidad actual',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: fechamantController,
+                  decoration: InputDecoration(
+                    labelText: 'Fecha de último mantenimiento',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: condicionController,
+                  decoration: InputDecoration(
+                    labelText: 'Condición del corral',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: observacioncorralController,
                   decoration: InputDecoration(
                     labelText: 'Observaciones',
                     border: OutlineInputBorder(),
@@ -278,10 +335,14 @@ class PagCorrales extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 final nuevoCorral = {
-                  'nombre': nombreController.text,
-                  'capacidad': int.tryParse(capacidadController.text),
-                  'ubicacion': ubicacionController.text,
-                  'observaciones': observacionesController.text,
+                  'identcorral': identcorralController.text,
+                  'nomcorral': nomcorralController.text,
+                  'ubicacion': ubicorralController.text,
+                  'capmax': capmaxController.text,
+                  'capactual': capactualController.text,
+                  'fechamant': fechamantController.text,
+                  'condicion': condicionController.text,
+                  'observacioncorral': observacioncorralController.text,
                 };
 
                 try {
@@ -314,19 +375,35 @@ class PagCorrales extends StatelessWidget {
 
   void _showEditCorralDialog(
     BuildContext context,
-    Map<String, dynamic> corral,
+    Map<String, dynamic> tcorral,
   ) {
-    final nombreController = TextEditingController(
-      text: corral['nombre'] ?? '',
+    final identcorralController = TextEditingController(
+      text: tcorral['identcorral'] ?? '',
     );
-    final capacidadController = TextEditingController(
-      text: corral['capacidad']?.toString() ?? '',
+    final nomcorralController = TextEditingController(
+      text: tcorral['nomcorral'] ?? '',
     );
-    final ubicacionController = TextEditingController(
-      text: corral['ubicacion'] ?? '',
+    final ubicorralController = TextEditingController(
+      text: tcorral['ubicorral'] ?? '',
     );
-    final observacionesController = TextEditingController(
-      text: corral['observaciones'] ?? '',
+    final capmaxController = TextEditingController(
+      text: tcorral['capmax']?.toString() ?? '',
+    );
+
+    final capactualController = TextEditingController(
+      text: tcorral['capactual']?.toString() ?? '',
+    );
+
+    final fechamantController = TextEditingController(
+      text: tcorral['fechamant'] ?? '',
+    );
+
+    final condicionController = TextEditingController(
+      text: tcorral['condicion'] ?? '',
+    );
+
+    final observacioncorralController = TextEditingController(
+      text: tcorral['observacioncorral'] ?? '',
     );
 
     showDialog(
@@ -339,31 +416,70 @@ class PagCorrales extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: nombreController,
+                  controller: nomcorralController,
                   decoration: InputDecoration(
                     labelText: 'Nombre del Corral',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
+
                 TextField(
-                  controller: capacidadController,
+                  controller: identcorralController,
+                  decoration: InputDecoration(
+                    labelText: 'Identificador del Corral',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: ubicorralController,
+                  decoration: InputDecoration(
+                    labelText: 'Ubicación del Corral',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: capmaxController,
                   decoration: InputDecoration(
                     labelText: 'Capacidad',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
+
                 TextField(
-                  controller: ubicacionController,
+                  controller: capactualController,
                   decoration: InputDecoration(
-                    labelText: 'Ubicación',
+                    labelText: 'Capacidad Actual',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
+
                 TextField(
-                  controller: observacionesController,
+                  controller: fechamantController,
+                  decoration: InputDecoration(
+                    labelText: 'Fecha de Mantención',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: condicionController,
+                  decoration: InputDecoration(
+                    labelText: 'Condición del Corral',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: observacioncorralController,
                   decoration: InputDecoration(
                     labelText: 'Observaciones',
                     border: OutlineInputBorder(),
@@ -380,14 +496,21 @@ class PagCorrales extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 final corralActualizado = {
-                  'nombre': nombreController.text,
-                  'capacidad': int.tryParse(capacidadController.text),
-                  'ubicacion': ubicacionController.text,
-                  'observaciones': observacionesController.text,
+                  'nomcorral': nomcorralController.text,
+                  'identcorral': identcorralController.text,
+                  'ubicorral': ubicorralController.text,
+                  'capmax': capmaxController.text,
+                  'capactual': capactualController.text,
+                  'fechamant': fechamantController.text,
+                  'condicion': condicionController.text,
+                  'observacioncorral': observacioncorralController.text,
                 };
 
                 try {
-                  await SQLHelper.updateCorral(corral['id'], corralActualizado);
+                  await SQLHelper.updateCorral(
+                    tcorral['idcorral'],
+                    corralActualizado,
+                  );
                   onRefresh();
                   Navigator.pop(context);
 
@@ -416,7 +539,7 @@ class PagCorrales extends StatelessWidget {
 
   void _showDeleteConfirmation(
     BuildContext context,
-    Map<String, dynamic> corral,
+    Map<String, dynamic> tcorral,
   ) {
     showDialog(
       context: context,
@@ -424,7 +547,7 @@ class PagCorrales extends StatelessWidget {
         return AlertDialog(
           title: Text("Eliminar Corral"),
           content: Text(
-            "¿Estás seguro de que quieres eliminar el corral ${corral['nombre']}?",
+            "¿Estás seguro de que quieres eliminar el corral ${tcorral['nombre']}?",
           ),
           actions: [
             TextButton(
@@ -434,7 +557,7 @@ class PagCorrales extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 try {
-                  await SQLHelper.deleteCorral(corral['id']);
+                  await SQLHelper.deleteCorral(tcorral['idcorral']);
                   onRefresh();
                   Navigator.pop(context);
 

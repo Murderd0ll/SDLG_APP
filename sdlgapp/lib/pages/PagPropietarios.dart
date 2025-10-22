@@ -107,14 +107,14 @@ class PagPropietarios extends StatelessWidget {
       padding: EdgeInsets.all(16),
       itemCount: data.length,
       itemBuilder: (context, index) {
-        final propietario = data[index];
-        return _buildPropietarioCard(propietario, context);
+        final tpropietarios = data[index];
+        return _buildPropietarioCard(tpropietarios, context);
       },
     );
   }
 
   Widget _buildPropietarioCard(
-    Map<String, dynamic> propietario,
+    Map<String, dynamic> tpropietarios,
     BuildContext context,
   ) {
     return Card(
@@ -134,22 +134,34 @@ class PagPropietarios extends StatelessWidget {
           ),
         ),
         title: Text(
-          '${propietario['nombre']} ${propietario['apellido']}',
+          '${tpropietarios['nombreprop']} ${tpropietarios['telprop']}',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 4),
-            if (propietario['telefono'] != null)
-              Text('Teléfono: ${propietario['telefono']}'),
-            if (propietario['email'] != null)
-              Text('Email: ${propietario['email']}'),
-            if (propietario['direccion'] != null)
-              Text('Dirección: ${propietario['direccion']}'),
+            if (tpropietarios['correoprop'] != null)
+              Text('Correo: ${tpropietarios['correoprop']}'),
+
+            if (tpropietarios['dirprop'] != null)
+              Text('Dirección: ${tpropietarios['dirprop']}'),
+
+            if (tpropietarios['rfcprop'] != null)
+              Text('RFC: ${tpropietarios['rfcprop']}'),
+
+            if (tpropietarios['psgprop'] != null)
+              Text('PSG: ${tpropietarios['psgprop']}'),
+
+            if (tpropietarios['uppprop'] != null)
+              Text('UPP: ${tpropietarios['uppprop']}'),
+
+            if (tpropietarios['observacionprop'] != null)
+              Text('Observaciones: ${tpropietarios['observacionprop']}'),
             SizedBox(height: 4),
+
             Text(
-              'ID: ${propietario['id']}',
+              'ID: ${tpropietarios['idprop']}',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
@@ -158,9 +170,9 @@ class PagPropietarios extends StatelessWidget {
           icon: Icon(Icons.more_vert),
           onSelected: (value) {
             if (value == 'edit') {
-              _showEditPropietarioDialog(context, propietario);
+              _showEditPropietarioDialog(context, tpropietarios);
             } else if (value == 'delete') {
-              _showDeleteConfirmation(context, propietario);
+              _showDeleteConfirmation(context, tpropietarios);
             }
           },
           itemBuilder: (BuildContext context) => [
@@ -203,16 +215,16 @@ class PagPropietarios extends StatelessWidget {
         ];
       }
 
-      return resultados.map((propietario) {
+      return resultados.map((tpropietarios) {
         return ListTile(
           leading: Icon(
             Icons.person,
             color: const Color.fromARGB(255, 137, 77, 119),
           ),
-          title: Text('${propietario['nombre']} ${propietario['apellido']}'),
-          subtitle: Text(propietario['telefono'] ?? 'Sin teléfono'),
+          title: Text('${tpropietarios['nombreprop']}'),
+          subtitle: Text(tpropietarios['telprop'] ?? 'Sin teléfono'),
           onTap: () {
-            // Aquí puedes navegar a los detalles del propietario
+            // FALTA AGREGAR PARA VER DETALLES DEL PROPIETARIO **************
           },
         );
       }).toList();
@@ -227,11 +239,14 @@ class PagPropietarios extends StatelessWidget {
   }
 
   void _showAddPropietarioDialog(BuildContext context) {
-    final nombreController = TextEditingController();
-    final apellidoController = TextEditingController();
-    final telefonoController = TextEditingController();
-    final emailController = TextEditingController();
-    final direccionController = TextEditingController();
+    final nombrepropController = TextEditingController();
+    final telpropController = TextEditingController();
+    final correopropController = TextEditingController();
+    final dirpropController = TextEditingController();
+    final rfcpropController = TextEditingController();
+    final psgpropController = TextEditingController();
+    final upppropController = TextEditingController();
+    final observacionpropController = TextEditingController();
 
     showDialog(
       context: context,
@@ -243,7 +258,7 @@ class PagPropietarios extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: nombreController,
+                  controller: nombrepropController,
                   decoration: InputDecoration(
                     labelText: 'Nombre',
                     border: OutlineInputBorder(),
@@ -251,15 +266,7 @@ class PagPropietarios extends StatelessWidget {
                 ),
                 SizedBox(height: 12),
                 TextField(
-                  controller: apellidoController,
-                  decoration: InputDecoration(
-                    labelText: 'Apellido',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: telefonoController,
+                  controller: telpropController,
                   decoration: InputDecoration(
                     labelText: 'Teléfono',
                     border: OutlineInputBorder(),
@@ -267,17 +274,49 @@ class PagPropietarios extends StatelessWidget {
                 ),
                 SizedBox(height: 12),
                 TextField(
-                  controller: emailController,
+                  controller: correopropController,
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Correo',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
                 TextField(
-                  controller: direccionController,
+                  controller: dirpropController,
                   decoration: InputDecoration(
                     labelText: 'Dirección',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: rfcpropController,
+                  decoration: InputDecoration(
+                    labelText: 'RFC',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: psgpropController,
+                  decoration: InputDecoration(
+                    labelText: 'PSG',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: upppropController,
+                  decoration: InputDecoration(
+                    labelText: 'UPP',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: observacionpropController,
+                  decoration: InputDecoration(
+                    labelText: 'Observaciones',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -292,11 +331,14 @@ class PagPropietarios extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 final nuevoPropietario = {
-                  'nombre': nombreController.text,
-                  'apellido': apellidoController.text,
-                  'telefono': telefonoController.text,
-                  'email': emailController.text,
-                  'direccion': direccionController.text,
+                  'nombreprop': nombrepropController.text,
+                  'telprop': telpropController.text,
+                  'correoprop': correopropController.text,
+                  'dirprop': dirpropController.text,
+                  'rfcprop': rfcpropController.text,
+                  'psgprop': psgpropController.text,
+                  'uppprop': upppropController.text,
+                  'observacionprop': observacionpropController.text,
                 };
 
                 try {
@@ -329,22 +371,31 @@ class PagPropietarios extends StatelessWidget {
 
   void _showEditPropietarioDialog(
     BuildContext context,
-    Map<String, dynamic> propietario,
+    Map<String, dynamic> tpropietarios,
   ) {
-    final nombreController = TextEditingController(
-      text: propietario['nombre'] ?? '',
+    final nombrepropController = TextEditingController(
+      text: tpropietarios['nombreprop'] ?? '',
     );
-    final apellidoController = TextEditingController(
-      text: propietario['apellido'] ?? '',
+    final telpropController = TextEditingController(
+      text: tpropietarios['telprop'] ?? '',
     );
-    final telefonoController = TextEditingController(
-      text: propietario['telefono'] ?? '',
+    final correopropController = TextEditingController(
+      text: tpropietarios['correoprop'] ?? '',
     );
-    final emailController = TextEditingController(
-      text: propietario['email'] ?? '',
+    final dirpropController = TextEditingController(
+      text: tpropietarios['dirprop'] ?? '',
     );
-    final direccionController = TextEditingController(
-      text: propietario['direccion'] ?? '',
+    final rfcpropController = TextEditingController(
+      text: tpropietarios['rfcprop'] ?? '',
+    );
+    final psgpropController = TextEditingController(
+      text: tpropietarios['psgprop'] ?? '',
+    );
+    final upppropController = TextEditingController(
+      text: tpropietarios['uppprop'] ?? '',
+    );
+    final observacionpropController = TextEditingController(
+      text: tpropietarios['observacionprop'] ?? '',
     );
 
     showDialog(
@@ -357,44 +408,76 @@ class PagPropietarios extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: nombreController,
+                  controller: nombrepropController,
                   decoration: InputDecoration(
                     labelText: 'Nombre',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
+
                 TextField(
-                  controller: apellidoController,
-                  decoration: InputDecoration(
-                    labelText: 'Apellido',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
-                TextField(
-                  controller: telefonoController,
+                  controller: telpropController,
                   decoration: InputDecoration(
                     labelText: 'Teléfono',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
+
                 TextField(
-                  controller: emailController,
+                  controller: correopropController,
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Correo',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 SizedBox(height: 12),
+
                 TextField(
-                  controller: direccionController,
+                  controller: dirpropController,
                   decoration: InputDecoration(
                     labelText: 'Dirección',
                     border: OutlineInputBorder(),
                   ),
                 ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: rfcpropController,
+                  decoration: InputDecoration(
+                    labelText: 'RFC',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: psgpropController,
+                  decoration: InputDecoration(
+                    labelText: 'PSG',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: upppropController,
+                  decoration: InputDecoration(
+                    labelText: 'UPP',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                TextField(
+                  controller: observacionpropController,
+                  decoration: InputDecoration(
+                    labelText: 'Observaciones',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
               ],
             ),
           ),
@@ -406,16 +489,19 @@ class PagPropietarios extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 final propietarioActualizado = {
-                  'nombre': nombreController.text,
-                  'apellido': apellidoController.text,
-                  'telefono': telefonoController.text,
-                  'email': emailController.text,
-                  'direccion': direccionController.text,
+                  'nombreprop': nombrepropController.text,
+                  'telprop': telpropController.text,
+                  'correoprop': correopropController.text,
+                  'dirprop': dirpropController.text,
+                  'rfcprop': rfcpropController.text,
+                  'psgprop': psgpropController.text,
+                  'uppprop': upppropController.text,
+                  'observacionprop': observacionpropController.text,
                 };
 
                 try {
                   await SQLHelper.updatePropietario(
-                    propietario['id'],
+                    tpropietarios['idprop'],
                     propietarioActualizado,
                   );
                   onRefresh();
@@ -446,7 +532,7 @@ class PagPropietarios extends StatelessWidget {
 
   void _showDeleteConfirmation(
     BuildContext context,
-    Map<String, dynamic> propietario,
+    Map<String, dynamic> tpropietarios,
   ) {
     showDialog(
       context: context,
@@ -454,7 +540,7 @@ class PagPropietarios extends StatelessWidget {
         return AlertDialog(
           title: Text("Eliminar Propietario"),
           content: Text(
-            "¿Estás seguro de que quieres eliminar a ${propietario['nombre']} ${propietario['apellido']}?",
+            "¿Estás seguro de que quieres eliminar a ${tpropietarios['nombreprop']}?",
           ),
           actions: [
             TextButton(
@@ -464,7 +550,7 @@ class PagPropietarios extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 try {
-                  await SQLHelper.deletePropietario(propietario['id']);
+                  await SQLHelper.deletePropietario(tpropietarios['idprop']);
                   onRefresh();
                   Navigator.pop(context);
 

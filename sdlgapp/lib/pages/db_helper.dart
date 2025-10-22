@@ -320,13 +320,14 @@ class SQLHelper {
         rfcprop TEXT,
         psgprop TEXT,
         uppprop TEXT,
-        observacionprop TEXT
+        observacionprop TEXT,
+        fotoprop TEXT
       )""");
-      print("Tabla 'propietarios' creada/verificada");
+      print("Tabla 'tpropietarios' creada/verificada");
 
-      // ************* Tabla de tcorrales ************* identcorral es el numero identificador del corral pq segun con eso los idntifican
+      // ************* Tabla de tcorral ************* identcorral es el numero identificador del corral pq segun con eso los idntifican
       //pero igual puse nombre por si acaso
-      await database.execute("""CREATE TABLE IF NOT EXISTS tcorrales(
+      await database.execute("""CREATE TABLE IF NOT EXISTS tcorral(
         idcorral INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         identcorral TEXT, 
         nomcorral TEXT,
@@ -337,7 +338,7 @@ class SQLHelper {
         condicion TEXT,
         observacioncorral TEXT
       )""");
-      print("Tabla 'corrales' creada/verificada");
+      print("Tabla 'tcorral' creada/verificada");
 
       // ************* Tabla de treprod  ************* REPRODUCCION SOLO DE HEMBRAS
       //ESTA TABLA es solo para llevar control de reproducción de las hembras
@@ -656,6 +657,7 @@ class SQLHelper {
         'estatusbece': data['estatusbece'] ?? '',
         'aretemadre': data['aretemadre'] ?? '',
         'observacionbece': data['observacionbece'] ?? '',
+        'fotobece': data['fotobece'] ?? '',
       };
 
       final idbece = await db.insert(
@@ -750,6 +752,7 @@ class SQLHelper {
         'psgprop': data['psgprop'] ?? '',
         'uppprop': data['uppprop'] ?? '',
         'observacionprop': data['observacionprop'] ?? '',
+        'fotoprop': data['fotoprop'] ?? '',
       };
 
       final idprop = await db.insert(
@@ -839,20 +842,23 @@ class SQLHelper {
     final db = await SQLHelper.db();
     try {
       final corralData = {
-        'nombre': data['nombre'] ?? '',
-        'capacidad': data['capacidad'],
-        'ubicacion': data['ubicacion'] ?? '',
-        'observaciones': data['observaciones'] ?? '',
-        'createdAt': DateTime.now().toIso8601String(),
+        'identcorral': data['identcorral'] ?? '',
+        'nomcorral': data['nomcorral'] ?? '',
+        'ubicorral': data['ubicorral'] ?? '',
+        'capmax': data['capmax'] ?? '',
+        'capactual': data['capactual'] ?? '',
+        'fechamant': data['fechamant'] ?? '',
+        'condicion': data['condicion'] ?? '',
+        'observacioncorral': data['observacioncorral'] ?? '',
       };
 
-      final id = await db.insert(
-        'corrales',
+      final idcorral = await db.insert(
+        'tcorral',
         corralData,
         conflictAlgorithm: sql.ConflictAlgorithm.replace,
       );
-      print("Corral creado con ID: $id");
-      return id;
+      print("Corral creado con ID: $idcorral");
+      return idcorral;
     } catch (e) {
       print("Error creando corral: $e");
       rethrow;
@@ -864,7 +870,7 @@ class SQLHelper {
   static Future<List<Map<String, dynamic>>> getAllCorrales() async {
     final db = await SQLHelper.db();
     try {
-      final result = await db.query('corrales', orderBy: "id DESC");
+      final result = await db.query('tcorral', orderBy: "idcorral DESC");
       print("Corrales obtenidos: ${result.length} registros");
       return result;
     } catch (e) {
@@ -874,13 +880,13 @@ class SQLHelper {
   }
 
   //este es para obtener los datos del corral seleccionado
-  static Future<List<Map<String, dynamic>>> getCorral(int id) async {
+  static Future<List<Map<String, dynamic>>> getCorral(int idcorral) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.query(
-        'corrales',
-        where: "id = ?",
-        whereArgs: [id],
+        'tcorral',
+        where: "idcorral = ?",
+        whereArgs: [idcorral],
         limit: 1,
       );
       return result;
@@ -891,14 +897,17 @@ class SQLHelper {
   }
 
   //este es para actualizar un corral en especifico
-  static Future<int> updateCorral(int id, Map<String, dynamic> data) async {
+  static Future<int> updateCorral(
+    int idcorral,
+    Map<String, dynamic> data,
+  ) async {
     final db = await SQLHelper.db();
     try {
       final result = await db.update(
-        'corrales',
+        'tcorral',
         data,
-        where: "id = ?",
-        whereArgs: [id],
+        where: "idcorral = ?",
+        whereArgs: [idcorral],
       );
       print("Corral actualizado: $result filas afectadas");
       return result;
@@ -909,11 +918,11 @@ class SQLHelper {
   }
 
   //este es para eliminar el corral seleccionado
-  static Future<void> deleteCorral(int id) async {
+  static Future<void> deleteCorral(int idcorral) async {
     final db = await SQLHelper.db();
     try {
-      await db.delete("corrales", where: "id = ?", whereArgs: [id]);
-      print("Corral eliminado con ID: $id");
+      await db.delete("tcorral", where: "idcorral = ?", whereArgs: [idcorral]);
+      print("Corral eliminado con ID: $idcorral");
     } catch (e) {
       print("Error eliminando corral: $e");
       rethrow;
@@ -995,7 +1004,7 @@ class SQLHelper {
     final db = await SQLHelper.db();
     try {
       final result = await db.query(
-        'corrales',
+        'tcorral',
         where:
             "identcorral LIKE ? OR nomcorral LIKE ? OR ubicorral LIKE ? OR condicion LIKE ? OR observacioncorral LIKE ? OR capmax LIKE ? OR capactual LIKE ?",
         whereArgs: [
@@ -1063,9 +1072,7 @@ class SQLHelper {
   static Future<int> getTotalCorrales() async {
     final db = await SQLHelper.db();
     try {
-      final result = await db.rawQuery(
-        'SELECT COUNT(*) as total FROM tcorrales',
-      );
+      final result = await db.rawQuery('SELECT COUNT(*) as total FROM tcorral');
       return (result.first['total'] as int?) ?? 0;
     } catch (e) {
       print("Error obteniendo total de corrales: $e");
