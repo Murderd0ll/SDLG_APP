@@ -266,11 +266,14 @@ class PagBecerros extends StatelessWidget {
             if (tbecerros['pesobece'] != null)
               Text('Peso al nacer: ${tbecerros['pesobece']} kg'),
 
+            if (tbecerros['sexobece'] != null)
+              Text('Sexo: ${tbecerros['sexobece']}'),
+
             if (tbecerros['razabece'] != null)
               Text('Raza: ${tbecerros['razabece']} kg'),
 
             if (tbecerros['aretemadre'] != null)
-              Text('Estatus: ${tbecerros['aretemadre']}'),
+              Text('Estatus: ${tbecerros['estatusbece']}'),
 
             if (tbecerros['observacionbece'] != null)
               Text('Observaciones: ${tbecerros['observacionbece']}'),
@@ -402,14 +405,15 @@ class PagBecerros extends StatelessWidget {
     final aretebeceController = TextEditingController();
     final nombrebeceController = TextEditingController();
     final pesobeceController = TextEditingController();
-    final sexobeceController = TextEditingController();
     final razabeceController = TextEditingController();
     final nacimientobeceController = TextEditingController();
     final corralbeceController = TextEditingController();
-    final estatusbeceController = TextEditingController();
+
     final aretemadreController = TextEditingController();
     final observacionbeceController = TextEditingController();
 
+    String? estatusbece;
+    String? sexoSeleccionado;
     File? selectedImage;
     String? imagePath;
 
@@ -461,11 +465,40 @@ class PagBecerros extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: sexobeceController,
-                      decoration: InputDecoration(
-                        labelText: 'Sexo',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: sexoSeleccionado,
+                        decoration: InputDecoration(
+                          labelText: 'Sexo',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Macho',
+                            child: Text('Macho'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Hembra',
+                            child: Text('Hembra'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            sexoSeleccionado = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona el sexo'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona el sexo';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -484,6 +517,11 @@ class PagBecerros extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Fecha de Nacimiento',
                         border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () =>
+                              _selectDate(context, nacimientobeceController),
+                        ),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -497,11 +535,40 @@ class PagBecerros extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: estatusbeceController,
-                      decoration: InputDecoration(
-                        labelText: 'Corral',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: estatusbece,
+                        decoration: InputDecoration(
+                          labelText: 'Estatus',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Activo',
+                            child: Text('Activo'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Inactivo',
+                            child: Text('Inactivo'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            estatusbece = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona el estatus'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona el estatus';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -536,11 +603,11 @@ class PagBecerros extends StatelessWidget {
                       'aretebece': aretebeceController.text,
                       'nombrebece': nombrebeceController.text,
                       'pesobece': pesobeceController.text,
-                      'sexobece': sexobeceController.text,
+                      'sexobece': sexoSeleccionado,
                       'razabece': razabeceController.text,
                       'nacimientobece': nacimientobeceController.text,
                       'corralbece': corralbeceController.text,
-                      'estatusbece': estatusbeceController.text,
+                      'estatusbece': estatusbece,
                       'aretemadre': aretemadreController.text,
                       'observacionbece': observacionbeceController.text,
                       'fotobece': imagePath ?? '',
@@ -1059,9 +1126,6 @@ class PagBecerros extends StatelessWidget {
     final pesobeceController = TextEditingController(
       text: tbecerros['pesobece']?.toString() ?? '',
     );
-    final sexobeceController = TextEditingController(
-      text: tbecerros['sexobece'] ?? '',
-    );
     final razabeceController = TextEditingController(
       text: tbecerros['razabece']?.toString() ?? '',
     );
@@ -1071,15 +1135,16 @@ class PagBecerros extends StatelessWidget {
     final corralbeceController = TextEditingController(
       text: tbecerros['corralbece']?.toString() ?? '',
     );
-    final estatusbeceController = TextEditingController(
-      text: tbecerros['estatusbece']?.toString() ?? '',
-    );
     final aretemadreController = TextEditingController(
       text: tbecerros['aretemadre']?.toString() ?? '',
     );
     final observacionbeceController = TextEditingController(
       text: tbecerros['observacionbece']?.toString() ?? '',
     );
+
+    String? estatusbece = tbecerros['estatusbece']?.toString();
+
+    String? sexoSeleccionado = tbecerros['sexobece']?.toString();
 
     File? selectedImage;
     String? imagePath = tbecerros['fotobece']?.toString();
@@ -1129,6 +1194,7 @@ class PagBecerros extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 12),
+
                     TextField(
                       controller: pesobeceController,
                       decoration: InputDecoration(
@@ -1137,14 +1203,45 @@ class PagBecerros extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 12),
-                    TextField(
-                      controller: sexobeceController,
-                      decoration: InputDecoration(
-                        labelText: 'Sexo',
-                        border: OutlineInputBorder(),
+
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: sexoSeleccionado,
+                        decoration: InputDecoration(
+                          labelText: 'Sexo',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Macho',
+                            child: Text('Macho'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Hembra',
+                            child: Text('Hembra'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            sexoSeleccionado = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona el sexo'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona el sexo';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
+
                     TextField(
                       controller: razabeceController,
                       decoration: InputDecoration(
@@ -1153,11 +1250,17 @@ class PagBecerros extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 12),
+
                     TextField(
                       controller: nacimientobeceController,
                       decoration: InputDecoration(
-                        labelText: 'Fecha de nacimiento',
+                        labelText: 'Fecha de Nacimiento',
                         border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () =>
+                              _selectDate(context, nacimientobeceController),
+                        ),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -1171,11 +1274,40 @@ class PagBecerros extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: estatusbeceController,
-                      decoration: InputDecoration(
-                        labelText: 'Peso al Nacer (kg)',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: estatusbece,
+                        decoration: InputDecoration(
+                          labelText: 'Estatus',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Activo',
+                            child: Text('Activo'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Inactivo',
+                            child: Text('Inactivo'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            estatusbece = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona el estatus'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona el estatus';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -1211,11 +1343,11 @@ class PagBecerros extends StatelessWidget {
                       'aretebece': aretebeceController.text,
                       'nombrebece': nombrebeceController.text,
                       'pesobece': pesobeceController.text,
-                      'sexobece': sexobeceController.text,
+                      'sexobece': sexoSeleccionado,
                       'razabece': razabeceController.text,
                       'nacimientobece': nacimientobeceController.text,
                       'corralbece': corralbeceController.text,
-                      'estatusbece': estatusbeceController.text,
+                      'estatusbece': estatusbece,
                       'aretemadre': aretemadreController.text,
                       'observacionbece': observacionbeceController.text,
                       'fotobece': imagePath ?? '',
