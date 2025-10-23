@@ -901,9 +901,10 @@ class PagBecerros extends StatelessWidget {
                     }
 
                     final nuevoRegistro = {
-                      'aretebece':
+                      'areteanimal':
                           tbecerros['aretebece'] ??
                           '', // Solo usamos el arete de la tabla tbecerro
+                      'tipoanimal': 'becerro',
                       'nomvet': veterinarioController.text,
                       'procedimiento': procedimientoController.text,
                       'condicionsalud': condicionController.text,
@@ -1308,7 +1309,7 @@ class AnimalDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagePath = tbecerros['fotogdo']?.toString();
+    final imagePath = tbecerros['fotobece']?.toString();
 
     return Dialog(
       insetPadding: EdgeInsets.all(20),
@@ -1593,8 +1594,9 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
 
   Future<void> _loadRegistrosSalud() async {
     try {
-      final registros = await SQLHelper.getRegistrosSaludPorArete(
+      final registros = await SQLHelper.getRegistrosSaludPorAreteYTipo(
         widget.tbecerros['aretebece'] ?? '',
+        'becerro',
       );
       setState(() {
         _registrosSalud = registros;
@@ -1679,7 +1681,7 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
                               Text(
                                 'Fecha: ${registro['fecharev'] ?? 'No especificada'}',
                               ),
-                              if (registro['condicion_salud'] != null)
+                              if (registro['condicionsalud'] != null)
                                 Text(
                                   'Condición: ${registro['condicionsalud']}',
                                 ),

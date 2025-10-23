@@ -284,6 +284,7 @@ class SQLHelper {
       await database.execute("""CREATE TABLE IF NOT EXISTS tsalud(
       idsalud INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
       areteanimal TEXT NOT NULL,
+      tipoanimal TEXT NOT NULL DEFAULT 'adulto',
       nomvet TEXT,
       procedimiento TEXT,
       condicionsalud TEXT,
@@ -423,6 +424,7 @@ class SQLHelper {
     try {
       final saludData = {
         'areteanimal': data['areteanimal'] ?? '',
+        'tipoanimal': data['tipoanimal'] ?? 'adulto',
         'nomvet': data['nomvet'] ?? '',
         'procedimiento': data['procedimiento'] ?? '',
         'condicionsalud': data['condicionsalud'] ?? '',
@@ -441,6 +443,29 @@ class SQLHelper {
     } catch (e) {
       print("Error creando registro de salud: $e");
       rethrow;
+    }
+  }
+
+  // Obtener registros por arete Y tipo de animal
+  static Future<List<Map<String, dynamic>>> getRegistrosSaludPorAreteYTipo(
+    String areteanimal,
+    String tipoAnimal,
+  ) async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.query(
+        'tsalud',
+        where: "areteanimal LIKE ? AND tipoanimal = ?",
+        whereArgs: ['%$areteanimal%', tipoAnimal],
+        orderBy: "fecharev DESC",
+      );
+      print(
+        "Registros de salud obtenidos: ${result.length} para arete $areteanimal (tipo: $tipoAnimal)",
+      );
+      return result;
+    } catch (e) {
+      print("Error obteniendo registros de salud: $e");
+      return [];
     }
   }
 

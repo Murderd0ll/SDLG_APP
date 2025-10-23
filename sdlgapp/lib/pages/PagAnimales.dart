@@ -904,6 +904,7 @@ class PagAnimales extends StatelessWidget {
                       'areteanimal':
                           animal['aretegdo'] ??
                           '', // Solo usamos el arete de la tabla tganado
+                      'tipoanimal': 'adulto',
                       'nomvet': veterinarioController.text,
                       'procedimiento': procedimientoController.text,
                       'condicionsalud': condicionController.text,
@@ -1609,8 +1610,9 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
 
   Future<void> _loadRegistrosSalud() async {
     try {
-      final registros = await SQLHelper.getRegistrosSaludPorArete(
+      final registros = await SQLHelper.getRegistrosSaludPorAreteYTipo(
         widget.animal['areteanimal'] ?? '',
+        'adulto',
       );
       setState(() {
         _registrosSalud = registros;
