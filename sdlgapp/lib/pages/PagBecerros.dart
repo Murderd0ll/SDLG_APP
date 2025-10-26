@@ -272,7 +272,10 @@ class PagBecerros extends StatelessWidget {
             if (tbecerros['razabece'] != null)
               Text('Raza: ${tbecerros['razabece']} kg'),
 
-            if (tbecerros['aretemadre'] != null)
+            if (tbecerros['nacimientobece'] != null)
+              Text('Nacimiento: ${tbecerros['nacimientobece']}'),
+
+            if (tbecerros['estatusbece'] != null)
               Text('Estatus: ${tbecerros['estatusbece']}'),
 
             if (tbecerros['observacionbece'] != null)
@@ -408,7 +411,6 @@ class PagBecerros extends StatelessWidget {
     final razabeceController = TextEditingController();
     final nacimientobeceController = TextEditingController();
     final corralbeceController = TextEditingController();
-
     final aretemadreController = TextEditingController();
     final observacionbeceController = TextEditingController();
 

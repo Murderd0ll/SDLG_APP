@@ -247,7 +247,7 @@ class PagAnimales extends StatelessWidget {
           },
         ),
         title: Text(
-          tganado['nombregdo'] ?? 'Sin nombre',
+          tganado['aretegdo'] ?? 'Sin arete',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
@@ -255,13 +255,19 @@ class PagAnimales extends StatelessWidget {
           children: [
             SizedBox(height: 4),
 
-            if (tganado['aretegdo'] != null)
-              Text('Arete: ${tganado['aretegdo']}'),
+            if (tganado['nombregdo'] != null)
+              Text('Nombre: ${tganado['nombregdo']}'),
 
             if (tganado['sexogdo'] != null) Text('Sexo: ${tganado['sexogdo']}'),
 
-            if (tganado['nacimientogdo'] != null)
-              Text('Nacimiento: ${tganado['nacimientogdo']}'),
+            if (tganado['razagdo'] != null)
+              Text('Raza: ${tganado['razagdo']} kg'),
+
+            if (tganado['estatusgdo'] != null)
+              Text('Estatus: ${tganado['estatusgdo']}'),
+
+            if (tganado['observaciongdo'] != null)
+              Text('Observaciones: ${tganado['observaciongdo']}'),
 
             SizedBox(height: 4),
             Text(
@@ -388,15 +394,15 @@ class PagAnimales extends StatelessWidget {
   void _showAddAnimalDialog(BuildContext context) {
     final areteController = TextEditingController();
     final nombreController = TextEditingController();
-    final sexoController = TextEditingController();
     final razaController = TextEditingController();
     final fechaNacimientoController = TextEditingController();
     final corralController = TextEditingController();
     final alimentoController = TextEditingController();
     final produccionController = TextEditingController();
-    final estatusController = TextEditingController();
     final observacionController = TextEditingController();
 
+    String? estatusgdo;
+    String? sexoSeleccionado;
     File? selectedImage;
     String? imagePath;
 
@@ -439,11 +445,40 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: sexoController,
-                      decoration: InputDecoration(
-                        labelText: 'Sexo',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: sexoSeleccionado,
+                        decoration: InputDecoration(
+                          labelText: 'Sexo',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Macho',
+                            child: Text('Macho'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Hembra',
+                            child: Text('Hembra'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            sexoSeleccionado = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona el sexo'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona el sexo';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -498,11 +533,40 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: estatusController,
-                      decoration: InputDecoration(
-                        labelText: 'Estatus',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: estatusgdo,
+                        decoration: InputDecoration(
+                          labelText: 'Estatus',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Activo',
+                            child: Text('Activo'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Inactivo',
+                            child: Text('Inactivo'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            estatusgdo = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona el estatus'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona el estatus';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -538,13 +602,13 @@ class PagAnimales extends StatelessWidget {
                     final nuevoAnimal = {
                       'aretegdo': areteController.text,
                       'nombregdo': nombreController.text,
-                      'sexogdo': sexoController.text,
+                      'sexogdo': sexoSeleccionado,
                       'razagdo': razaController.text,
                       'nacimientogdo': fechaNacimientoController.text,
                       'corralgdo': corralController.text,
                       'alimentogdo': alimentoController.text,
                       'prodgdo': produccionController.text,
-                      'estatusgdo': estatusController.text,
+                      'estatusgdo': estatusgdo,
                       'observaciongdo': observacionController.text,
                       'fotogdo': imagePath ?? '',
                     };
@@ -1056,9 +1120,7 @@ class PagAnimales extends StatelessWidget {
     final nombreController = TextEditingController(
       text: tganado['nombregdo']?.toString() ?? '',
     );
-    final sexoController = TextEditingController(
-      text: tganado['sexogdo']?.toString() ?? '',
-    );
+
     final razaController = TextEditingController(
       text: tganado['razagdo']?.toString() ?? '',
     );
@@ -1074,12 +1136,12 @@ class PagAnimales extends StatelessWidget {
     final produccionController = TextEditingController(
       text: tganado['prodgdo']?.toString() ?? '',
     );
-    final estatusController = TextEditingController(
-      text: tganado['estatusgdo']?.toString() ?? '',
-    );
+
     final observacionController = TextEditingController(
       text: tganado['observaciongdo']?.toString() ?? '',
     );
+    String? estatusgdo = tganado['estatusgdo']?.toString();
+    String? sexoSeleccionado = tganado['sexogdo']?.toString();
 
     File? selectedImage;
     String? imagePath = tganado['fotogdo']?.toString();
@@ -1130,11 +1192,40 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: sexoController,
-                      decoration: InputDecoration(
-                        labelText: 'Sexo',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: sexoSeleccionado,
+                        decoration: InputDecoration(
+                          labelText: 'Sexo',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Macho',
+                            child: Text('Macho'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Hembra',
+                            child: Text('Hembra'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            sexoSeleccionado = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona el sexo'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona el sexo';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -1189,11 +1280,40 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: estatusController,
-                      decoration: InputDecoration(
-                        labelText: 'Estatus',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: estatusgdo,
+                        decoration: InputDecoration(
+                          labelText: 'Estatus',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Activo',
+                            child: Text('Activo'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Inactivo',
+                            child: Text('Inactivo'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            estatusgdo = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona el estatus'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona el estatus';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -1228,13 +1348,13 @@ class PagAnimales extends StatelessWidget {
                     final animalActualizado = {
                       'aretegdo': areteController.text,
                       'nombregdo': nombreController.text,
-                      'sexogdo': sexoController.text,
+                      'sexogdo': sexoSeleccionado,
                       'razagdo': razaController.text,
                       'nacimientogdo': fechaNacimientoController.text,
                       'corralgdo': corralController.text,
                       'alimentogdo': alimentoController.text,
                       'prodgdo': produccionController.text,
-                      'estatusgdo': estatusController.text,
+                      'estatusgdo': estatusgdo,
                       'observaciongdo': observacionController.text,
                       'fotogdo': imagePath ?? '',
                     };
