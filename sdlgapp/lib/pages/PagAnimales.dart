@@ -398,9 +398,9 @@ class PagAnimales extends StatelessWidget {
     final fechaNacimientoController = TextEditingController();
     final corralController = TextEditingController();
     final alimentoController = TextEditingController();
-    final produccionController = TextEditingController();
     final observacionController = TextEditingController();
 
+    String? produccion;
     String? estatusgdo;
     String? sexoSeleccionado;
     File? selectedImage;
@@ -524,11 +524,41 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: produccionController,
-                      decoration: InputDecoration(
-                        labelText: 'Tipo de producción',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: produccion,
+                        decoration: InputDecoration(
+                          labelText: 'Tipo de producción',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Exportacion',
+                            child: Text('Exportación'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Rastro',
+                            child: Text('Rastro'),
+                          ),
+                          DropdownMenuItem(value: 'Cria', child: Text('Cría')),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            produccion = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona la producción'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona la producción';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -553,6 +583,14 @@ class PagAnimales extends StatelessWidget {
                           DropdownMenuItem(
                             value: 'Inactivo',
                             child: Text('Inactivo'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Vendido',
+                            child: Text('Vendido'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Muerto',
+                            child: Text('Muerto'),
                           ),
                         ],
                         onChanged: (String? newValue) {
@@ -607,7 +645,7 @@ class PagAnimales extends StatelessWidget {
                       'nacimientogdo': fechaNacimientoController.text,
                       'corralgdo': corralController.text,
                       'alimentogdo': alimentoController.text,
-                      'prodgdo': produccionController.text,
+                      'prodgdo': produccion,
                       'estatusgdo': estatusgdo,
                       'observaciongdo': observacionController.text,
                       'fotogdo': imagePath ?? '',

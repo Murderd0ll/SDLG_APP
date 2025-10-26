@@ -1,0 +1,45 @@
+****FALTA****
+*login
+*Inicio - Jalar los datos de los animales y becerros y mostrarlos en el inicio (en forma de contador -3 animales en total, 1 becerro, 1 vaca, 1 toro por ejemplo xd)
+*Conexión a software - Creación de copias de seguridad que se almacenen? 
+
+*Deseleccionar bottom nav bar si se selecciona desde la side bar
+
+En animales y becerros-
+*seleccionar los corrales existentes desde la creación y update de los animales (como opciones existentes)
+**Falta que si es hembra mande otra pantalla (reproducción) o que aparezca una opcion (como lo de salud) para agregar datos de reproducción
+**Falta mostrar todos los datos en historial de salud
+**Falta fixear lo de agregar fotos en salud
+
+En corrales-
+**Sumar los animales y guardarlos en capacidad actual de corrales
+
+
+
+FALTA
+**Login
+**Inicio
+**Conexion con software (o copias de seguridad xD)
+
+***Animales y becerros***
+*Salud (mostrar bn el historial)
+*Mostrar corrales disponibles
+
+***Animales***
+*Si es hembra, opción de reproducción 
+**Metodo de preñez (monta natural, inseminación artificial, inseminacion artificial a tiempo fijo, transferencia de embrión)
+*Fecha de servicio
+*Diagnostico de gestacipon (predicciones de fechas)
+
+***Salud***
+*Agregar fotos
+*Medicina preventiva (hormonas, baños, vacunas, desparacitación, bacterinas, etc)
+*Manejo (cortado de cuernos, rebajado de pezuñas)
+*Fecha de inicio de tratamiento 
+
+
+
+
+
+
+

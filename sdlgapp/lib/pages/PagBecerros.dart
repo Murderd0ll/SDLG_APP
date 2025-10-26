@@ -558,6 +558,14 @@ class PagBecerros extends StatelessWidget {
                             value: 'Inactivo',
                             child: Text('Inactivo'),
                           ),
+                          DropdownMenuItem(
+                            value: 'Vendido',
+                            child: Text('Vendido'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Muerto',
+                            child: Text('Muerto'),
+                          ),
                         ],
                         onChanged: (String? newValue) {
                           setState(() {
@@ -830,10 +838,10 @@ class PagBecerros extends StatelessWidget {
   ) {
     final veterinarioController = TextEditingController();
     final procedimientoController = TextEditingController();
-    final condicionController = TextEditingController();
     final fechaRevisionController = TextEditingController();
     final observacionesController = TextEditingController();
 
+    String? condicion;
     File? selectedFile;
     String? filePath;
 
@@ -904,11 +912,41 @@ class PagBecerros extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: condicionController,
-                      decoration: InputDecoration(
-                        labelText: 'Condición de Salud',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: condicion,
+                        decoration: InputDecoration(
+                          labelText: 'Condición de Salud',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Buena',
+                            child: Text('Buena'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Regular',
+                            child: Text('Regular'),
+                          ),
+                          DropdownMenuItem(value: 'Mala', child: Text('Mala')),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            condicion = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona la condición'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona la condición';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -976,7 +1014,7 @@ class PagBecerros extends StatelessWidget {
                       'tipoanimal': 'becerro',
                       'nomvet': veterinarioController.text,
                       'procedimiento': procedimientoController.text,
-                      'condicionsalud': condicionController.text,
+                      'condicionsalud': condicion,
                       'fecharev': fechaRevisionController.text,
                       'observacionsalud': observacionesController.text,
                       'archivo': filePath ?? '',
@@ -1296,6 +1334,14 @@ class PagBecerros extends StatelessWidget {
                           DropdownMenuItem(
                             value: 'Inactivo',
                             child: Text('Inactivo'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Vendido',
+                            child: Text('Vendido'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Muerto',
+                            child: Text('Muerto'),
                           ),
                         ],
                         onChanged: (String? newValue) {

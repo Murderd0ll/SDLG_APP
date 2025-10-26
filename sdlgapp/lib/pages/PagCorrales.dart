@@ -199,6 +199,35 @@ class PagCorrales extends StatelessWidget {
     );
   }
 
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: const Color.fromARGB(255, 137, 77, 77),
+              onPrimary: Colors.white,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final formattedDate = "${picked.day}/${picked.month}/${picked.year}";
+      controller.text = formattedDate;
+    }
+  }
+
   Future<List<Widget>> _buildSearchSuggestions(String query) async {
     try {
       final resultados = await SQLHelper.searchCorrales(query);
@@ -242,132 +271,175 @@ class PagCorrales extends StatelessWidget {
     final capmaxController = TextEditingController();
     final capactualController = TextEditingController();
     final fechamantController = TextEditingController();
-    final condicionController = TextEditingController();
     final observacioncorralController = TextEditingController();
+
+    String? condicion;
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Agregar Corral"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nomcorralController,
-                  decoration: InputDecoration(
-                    labelText: 'Nombre del Corral',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Agregar Corral"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nomcorralController,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre del Corral',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: identcorralController,
-                  decoration: InputDecoration(
-                    labelText: 'ID del Corral',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: identcorralController,
+                      decoration: InputDecoration(
+                        labelText: 'Identificador del Corral',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: ubicorralController,
-                  decoration: InputDecoration(
-                    labelText: 'Ubicación',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: ubicorralController,
+                      decoration: InputDecoration(
+                        labelText: 'Ubicación',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: capmaxController,
-                  decoration: InputDecoration(
-                    labelText: 'Capacidad máxima',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: capmaxController,
+                      decoration: InputDecoration(
+                        labelText: 'Capacidad máxima',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: capactualController,
-                  decoration: InputDecoration(
-                    labelText: 'Capacidad actual',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: capactualController,
+                      decoration: InputDecoration(
+                        labelText: 'Capacidad actual',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: fechamantController,
-                  decoration: InputDecoration(
-                    labelText: 'Fecha de último mantenimiento',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: fechamantController,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha de Mantenimiento',
+                        border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () =>
+                              _selectDate(context, fechamantController),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: condicionController,
-                  decoration: InputDecoration(
-                    labelText: 'Condición del corral',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: condicion,
+                        decoration: InputDecoration(
+                          labelText: 'Condición del Corral',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Buena',
+                            child: Text('Buena'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Regular',
+                            child: Text('Regular'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'No apto',
+                            child: Text('No apto'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            condicion = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona la condición'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona la condición';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: observacioncorralController,
-                  decoration: InputDecoration(
-                    labelText: 'Observaciones',
-                    border: OutlineInputBorder(),
-                  ),
+                    TextField(
+                      controller: observacioncorralController,
+                      decoration: InputDecoration(
+                        labelText: 'Observaciones',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final nuevoCorral = {
+                      'identcorral': identcorralController.text,
+                      'nomcorral': nomcorralController.text,
+                      'ubicorral': ubicorralController.text,
+                      'capmax': capmaxController.text,
+                      'capactual': capactualController.text,
+                      'fechamant': fechamantController.text,
+                      'condicion': condicion,
+                      'observacioncorral': observacioncorralController.text,
+                    };
+
+                    try {
+                      await SQLHelper.createCorral(nuevoCorral);
+                      onRefresh();
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Corral agregado exitosamente'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al agregar corral: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  child: Text('Guardar'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final nuevoCorral = {
-                  'identcorral': identcorralController.text,
-                  'nomcorral': nomcorralController.text,
-                  'ubicacion': ubicorralController.text,
-                  'capmax': capmaxController.text,
-                  'capactual': capactualController.text,
-                  'fechamant': fechamantController.text,
-                  'condicion': condicionController.text,
-                  'observacioncorral': observacioncorralController.text,
-                };
-
-                try {
-                  await SQLHelper.createCorral(nuevoCorral);
-                  onRefresh();
-                  Navigator.pop(context);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Corral agregado exitosamente'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al agregar corral: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: Text('Guardar'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -398,140 +470,180 @@ class PagCorrales extends StatelessWidget {
       text: tcorral['fechamant'] ?? '',
     );
 
-    final condicionController = TextEditingController(
-      text: tcorral['condicion'] ?? '',
-    );
-
     final observacioncorralController = TextEditingController(
       text: tcorral['observacioncorral'] ?? '',
     );
 
+    String? condicion = tcorral['condicion'].toString();
+
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Editar Corral"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nomcorralController,
-                  decoration: InputDecoration(
-                    labelText: 'Nombre del Corral',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Editar Corral"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nomcorralController,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre del Corral',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: identcorralController,
-                  decoration: InputDecoration(
-                    labelText: 'Identificador del Corral',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: identcorralController,
+                      decoration: InputDecoration(
+                        labelText: 'Identificador del Corral',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: ubicorralController,
-                  decoration: InputDecoration(
-                    labelText: 'Ubicación del Corral',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: ubicorralController,
+                      decoration: InputDecoration(
+                        labelText: 'Ubicación del Corral',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: capmaxController,
-                  decoration: InputDecoration(
-                    labelText: 'Capacidad',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: capmaxController,
+                      decoration: InputDecoration(
+                        labelText: 'Capacidad',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: capactualController,
-                  decoration: InputDecoration(
-                    labelText: 'Capacidad Actual',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: capactualController,
+                      decoration: InputDecoration(
+                        labelText: 'Capacidad Actual',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: fechamantController,
-                  decoration: InputDecoration(
-                    labelText: 'Fecha de Mantención',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    TextField(
+                      controller: fechamantController,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha de Mantenimiento',
+                        border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () =>
+                              _selectDate(context, fechamantController),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: condicionController,
-                  decoration: InputDecoration(
-                    labelText: 'Condición del Corral',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: condicion,
+                        decoration: InputDecoration(
+                          labelText: 'Condición del Corral',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Buena',
+                            child: Text('Buena'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Regular',
+                            child: Text('Regular'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'No apto',
+                            child: Text('No apto'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            condicion = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona la condición'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona la condición';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 12),
 
-                TextField(
-                  controller: observacioncorralController,
-                  decoration: InputDecoration(
-                    labelText: 'Observaciones',
-                    border: OutlineInputBorder(),
-                  ),
+                    TextField(
+                      controller: observacioncorralController,
+                      decoration: InputDecoration(
+                        labelText: 'Observaciones',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final corralActualizado = {
+                      'nomcorral': nomcorralController.text,
+                      'identcorral': identcorralController.text,
+                      'ubicorral': ubicorralController.text,
+                      'capmax': capmaxController.text,
+                      'capactual': capactualController.text,
+                      'fechamant': fechamantController.text,
+                      'condicion': condicion,
+                      'observacioncorral': observacioncorralController.text,
+                    };
+
+                    try {
+                      await SQLHelper.updateCorral(
+                        tcorral['idcorral'],
+                        corralActualizado,
+                      );
+                      onRefresh();
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Corral actualizado exitosamente'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al actualizar corral: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  child: Text('Actualizar'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final corralActualizado = {
-                  'nomcorral': nomcorralController.text,
-                  'identcorral': identcorralController.text,
-                  'ubicorral': ubicorralController.text,
-                  'capmax': capmaxController.text,
-                  'capactual': capactualController.text,
-                  'fechamant': fechamantController.text,
-                  'condicion': condicionController.text,
-                  'observacioncorral': observacioncorralController.text,
-                };
-
-                try {
-                  await SQLHelper.updateCorral(
-                    tcorral['idcorral'],
-                    corralActualizado,
-                  );
-                  onRefresh();
-                  Navigator.pop(context);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Corral actualizado exitosamente'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al actualizar corral: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: Text('Actualizar'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
