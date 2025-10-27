@@ -1,3 +1,4 @@
+// db_helper.dart - Versión completa y corregida
 import 'package:path_provider/path_provider.dart';
 import 'package:sdlgapp/pages/PagAnimales.dart';
 import 'package:sqflite/sqflite.dart' as sql;
@@ -66,7 +67,7 @@ class SQLHelper {
       print("📊 Tamaño real de la BD: ${stat.size} bytes");
 
       if (stat.size < 8192) {
-        // tiene que ser mínimo >8KB
+        // SQLite mínimo suele ser >8KB
         print("❌ Archivo de BD demasiado pequeño, quizás esté corrupto");
         return;
       }
@@ -262,7 +263,7 @@ class SQLHelper {
     try {
       print("Creando tablas...");
 
-      // ************* Tabla de tganado *************
+      // ************* Tabla de tganado ************* esta ya está completa
       await database.execute("""CREATE TABLE IF NOT EXISTS tganado(
         idgdo INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         aretegdo TEXT,
@@ -279,7 +280,7 @@ class SQLHelper {
       )""");
       print("Tabla 'tganado' creada/verificada");
 
-      // ************* Tabla de tsalud *************
+      // ************* Tabla de tsalud ************* este ya está completo, es el de los registros de salud de los ANIMALES, no de los becerros
       await database.execute("""CREATE TABLE IF NOT EXISTS tsalud(
       idsalud INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
       areteanimal TEXT NOT NULL,
@@ -292,19 +293,6 @@ class SQLHelper {
       archivo TEXT
     )""");
       print("Tabla 'tsalud' creada/verificada");
-
-      // ************* Tabla de treprod  ************* REPRODUCCION SOLO DE HEMBRAS
-      await database.execute("""CREATE TABLE IF NOT EXISTS treprod(
-        idreprod INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        cargada TEXT, 
-        cantpartos TEXT,
-        fservicioactual TEXT,
-        faproxparto TEXT,
-        fnuevoservicio TEXT,
-        tecnica TEXT,
-        areteanimal TEXT
-      )""");
-      print("Tabla 'treprod' creada/verificada");
 
       // ************* Tabla de tbecerros *************
       await database.execute("""CREATE TABLE IF NOT EXISTS tbecerros(
@@ -353,8 +341,20 @@ class SQLHelper {
       )""");
       print("Tabla 'tcorral' creada/verificada");
 
+      // ************* Tabla de treprod  ************* REPRODUCCION SOLO DE HEMBRAS
+      //ESTA TABLA es solo para llevar control de reproducción de las hembras
+      await database.execute("""CREATE TABLE IF NOT EXISTS treprod(
+        idreprod INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        cargada TEXT, 
+        cantpartos TEXT,
+        fcargadoactual TEXT,
+        tecnica TEXT,
+        areteanimal TEXT
+      )""");
+      print("Tabla 'treprod' creada/verificada");
+
       // ************* Tabla de usuarios ************* este es para el log in, no se crearán desde aquí
-      //los datos se deben jalar desde la PC y mandarse al telefono para q los valide
+      //los datos se jalarán desde la PC y se mandaran al telefono para q los valide
       await database.execute("""CREATE TABLE IF NOT EXISTS tusuarios(
         idusuario INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         nombre TEXT,
@@ -579,7 +579,7 @@ class SQLHelper {
   }
 
   //este es para saber cuantos datos hay en la tabla de animales
-  //los print nomas se ve en la terminal y sirve tbn para q muestre o no un mensaje en la interfaz
+  //nomas se ve en la terminal y sirve tbn para q muestre o no un mensaje en la interfaz
   static Future<List<Map<String, dynamic>>> getAllAnimales() async {
     final db = await SQLHelper.db();
     try {

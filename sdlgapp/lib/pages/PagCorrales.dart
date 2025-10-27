@@ -48,7 +48,10 @@ class PagCorrales extends StatelessWidget {
                             ),
                           ];
                         }
-                        return _buildSearchSuggestions(controller.text);
+                        return _buildSearchSuggestions(
+                          controller.text,
+                          context,
+                        );
                       },
                 ),
               ),
@@ -56,14 +59,14 @@ class PagCorrales extends StatelessWidget {
             SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 137, 119, 77).withOpacity(0.2),
+                color: const Color.fromARGB(255, 137, 77, 77).withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
                 onPressed: () => _showAddCorralDialog(context),
                 icon: Icon(
                   Icons.add,
-                  color: const Color.fromARGB(255, 137, 119, 77),
+                  color: const Color.fromARGB(255, 182, 128, 128),
                 ),
                 tooltip: 'Agregar Corral',
               ),
@@ -228,7 +231,10 @@ class PagCorrales extends StatelessWidget {
     }
   }
 
-  Future<List<Widget>> _buildSearchSuggestions(String query) async {
+  Future<List<Widget>> _buildSearchSuggestions(
+    String query,
+    BuildContext context,
+  ) async {
     try {
       final resultados = await SQLHelper.searchCorrales(query);
 
@@ -250,7 +256,8 @@ class PagCorrales extends StatelessWidget {
           title: Text(tcorral['nomcorral'] ?? 'Sin nombre'),
           subtitle: Text('${tcorral['identcorral']} - ${tcorral['capactual']}'),
           onTap: () {
-            // Aquí puedes navegar a los detalles del corral
+            Navigator.pop(context);
+            _showEditCorralDialog(context, tcorral);
           },
         );
       }).toList();

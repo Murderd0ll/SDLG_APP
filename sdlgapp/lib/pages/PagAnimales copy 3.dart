@@ -1,16 +1,14 @@
-// ignore_for_file: unused_local_variable
-
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ImageService {
   static final ImagePicker _picker = ImagePicker();
-  // Tomar foto con la camara del celular
+  // Tomar foto con cámara
 
   static Future<File?> takePhoto() async {
     try {
@@ -26,7 +24,7 @@ class ImageService {
     }
   }
 
-  // Seleccionar foto de la galería
+  // Seleccionar de galería
   static Future<File?> pickPhoto() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -44,9 +42,9 @@ class ImageService {
   // Guardar imagen en directorio de la app
   static Future<String?> saveImageToAppDirectory(File imageFile) async {
     try {
-      // Obtener directorio de la imagen
+      // Obtener directorio de documentos
       final Directory appDir = await getApplicationDocumentsDirectory();
-      final String imagesDirPath = '${appDir.path}/becerro_images';
+      final String imagesDirPath = '${appDir.path}/animal_images';
 
       // Crear directorio si no existe
       final Directory imagesDir = Directory(imagesDirPath);
@@ -56,7 +54,7 @@ class ImageService {
 
       // Generar nombre único para la imagen
       final String fileName =
-          'becerro_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1000)}.jpg';
+          'animal_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1000)}.jpg';
       final String newPath = '${imagesDir.path}/$fileName';
 
       // Copiar archivo al nuevo directorio
@@ -98,25 +96,22 @@ class ImageService {
   }
 }
 
-class PagBecerros extends StatelessWidget {
+class PagAnimales extends StatelessWidget {
   final List<Map<String, dynamic>> data;
   final VoidCallback onRefresh;
   final bool isLoading;
 
-  const PagBecerros({
+  const PagAnimales({
     super.key,
     required this.data,
     required this.onRefresh,
     required this.isLoading,
   });
 
-  void _showBecerroDetails(
-    Map<String, dynamic> tbecerros,
-    BuildContext context,
-  ) {
+  void _showAnimalDetails(Map<String, dynamic> animal, BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AnimalDetailsDialog(tbecerros: tbecerros),
+      builder: (context) => AnimalDetailsDialog(animal: animal),
     );
   }
 
@@ -133,7 +128,7 @@ class PagBecerros extends StatelessWidget {
               child: Container(
                 height: 40,
                 child: SearchAnchor.bar(
-                  barHintText: 'Buscar Becerros',
+                  barHintText: 'Buscar Animal',
                   barElevation: WidgetStateProperty.all(0),
                   barSide: WidgetStateProperty.all(
                     BorderSide(color: Colors.grey.shade400, width: 1.5),
@@ -150,15 +145,12 @@ class PagBecerros extends StatelessWidget {
                         if (controller.text.isEmpty) {
                           return [
                             ListTile(
-                              title: Text("Escribe para buscar becerros..."),
+                              title: Text("Escribe para buscar animales..."),
                               textColor: Colors.grey,
                             ),
                           ];
                         }
-                        return _buildSearchSuggestions(
-                          controller.text,
-                          context,
-                        );
+                        return _buildSearchSuggestions(controller.text);
                       },
                 ),
               ),
@@ -170,12 +162,12 @@ class PagBecerros extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                onPressed: () => _showAddBecerroDialog(context),
+                onPressed: () => _showAddAnimalDialog(context),
                 icon: Icon(
                   Icons.add,
                   color: const Color.fromARGB(255, 182, 128, 128),
                 ),
-                tooltip: 'Agregar Becerro',
+                tooltip: 'Agregar Animal',
               ),
             ),
           ],
@@ -195,10 +187,10 @@ class PagBecerros extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Symbols.pediatrics, size: 64, color: Colors.grey[400]),
+            FaIcon(FontAwesomeIcons.cow, size: 64, color: Colors.grey[400]),
             SizedBox(height: 16),
             Text(
-              "No hay becerros registrados",
+              "No hay animales registrados",
               style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
             SizedBox(height: 8),
@@ -215,17 +207,17 @@ class PagBecerros extends StatelessWidget {
       padding: EdgeInsets.all(16),
       itemCount: data.length,
       itemBuilder: (context, index) {
-        final tbecerros = data[index];
-        return _buildBecerroCard(tbecerros, context);
+        final tganado = data[index];
+        return _buildAnimalCard(tganado, context);
       },
     );
   }
 
-  Widget _buildBecerroCard(
-    Map<String, dynamic> tbecerros,
-    BuildContext context,
-  ) {
-    final imagePath = tbecerros['fotobece']?.toString();
+  Widget _buildAnimalCard(Map<String, dynamic> tganado, BuildContext context) {
+    final imagePath = tganado['fotogdo']?.toString();
+    final bool eshembra =
+        tganado['sexogdo']?.toString().toLowerCase() == 'hembra';
+
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -249,8 +241,8 @@ class PagBecerros extends StatelessWidget {
                   128,
                   128,
                 ).withOpacity(0.2),
-                child: Icon(
-                  Icons.pets,
+                child: FaIcon(
+                  FontAwesomeIcons.cow,
                   color: const Color.fromARGB(255, 137, 77, 77),
                 ),
               );
@@ -258,7 +250,7 @@ class PagBecerros extends StatelessWidget {
           },
         ),
         title: Text(
-          tbecerros['aretebece'] ?? 'Sin arete',
+          tganado['aretegdo'] ?? 'Sin arete',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
@@ -266,81 +258,187 @@ class PagBecerros extends StatelessWidget {
           children: [
             SizedBox(height: 4),
 
-            if (tbecerros['nombrebece'] != null)
-              Text('Nombre: ${tbecerros['nombrebece']} kg'),
+            if (tganado['nombregdo'] != null)
+              Text('Nombre: ${tganado['nombregdo']}'),
 
-            if (tbecerros['pesobece'] != null)
-              Text('Peso al nacer: ${tbecerros['pesobece']} kg'),
+            if (tganado['sexogdo'] != null) Text('Sexo: ${tganado['sexogdo']}'),
 
-            if (tbecerros['sexobece'] != null)
-              Text('Sexo: ${tbecerros['sexobece']}'),
+            if (tganado['razagdo'] != null)
+              Text('Raza: ${tganado['razagdo']} kg'),
 
-            if (tbecerros['razabece'] != null)
-              Text('Raza: ${tbecerros['razabece']} kg'),
+            if (tganado['estatusgdo'] != null)
+              Text('Estatus: ${tganado['estatusgdo']}'),
 
-            if (tbecerros['nacimientobece'] != null)
-              Text('Nacimiento: ${tbecerros['nacimientobece']}'),
-
-            if (tbecerros['estatusbece'] != null)
-              Text('Estatus: ${tbecerros['estatusbece']}'),
-
-            if (tbecerros['observacionbece'] != null)
-              Text('Observaciones: ${tbecerros['observacionbece']}'),
+            if (tganado['observaciongdo'] != null)
+              Text('Observaciones: ${tganado['observaciongdo']}'),
 
             SizedBox(height: 4),
             Text(
-              'ID: ${tbecerros['idbece']}',
+              'ID: ${tganado['idgdo']}',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
-        onTap: () => _showBecerroDetails(tbecerros, context),
+        onTap: () => _showAnimalDetails(
+          tganado,
+          context,
+        ), //  Este es para mostrar el popup de los detalles
         trailing: PopupMenuButton<String>(
           icon: Icon(Icons.more_vert),
           onSelected: (value) {
             if (value == 'health') {
-              _showHealthOptions(context, tbecerros);
-            }
-            if (value == 'edit') {
-              _showEditBecerroDialog(context, tbecerros);
+              _showHealthOptions(context, tganado);
+            } else if (value == 'reproduccion') {
+              _showReproductionOptions(context, tganado);
+            } else if (value == 'edit') {
+              _showEditAnimalDialog(context, tganado);
             } else if (value == 'delete') {
-              _showDeleteConfirmation(context, tbecerros);
+              _showDeleteConfirmation(context, tganado);
             }
           },
 
-          itemBuilder: (BuildContext context) => [
-            PopupMenuItem<String>(
-              value: 'health', //Salud
-              child: Row(
-                children: [
-                  Icon(Icons.medical_services, color: Colors.green),
-                  SizedBox(width: 8),
-                  Text('Salud'),
-                ],
+          itemBuilder: (BuildContext context) {
+            final List<PopupMenuEntry<String>> items = [
+              PopupMenuItem<String>(
+                value: 'health', // salud
+                child: Row(
+                  children: [
+                    Icon(Icons.medical_services, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text('Salud'),
+                  ],
+                ),
+              ),
+            ];
+            if (eshembra) {
+              items.add(
+                PopupMenuItem<String>(
+                  value: 'reproduccion',
+                  child: Row(
+                    children: [
+                      Icon(Icons.family_restroom, color: Colors.purple),
+                      SizedBox(width: 8),
+                      Text('Reproducción'),
+                    ],
+                  ),
+                ),
+              );
+            }
+            items.addAll([
+              PopupMenuItem<String>(
+                value: 'edit', //editar
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Editar'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'delete', //eliminar
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Eliminar'),
+                  ],
+                ),
+              ),
+            ]);
+            return items;
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showReproductionOptions(
+    BuildContext context,
+    Map<String, dynamic> treprod,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Reproducción - ${treprod['areteanimal']}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: const Color.fromARGB(255, 137, 77, 77),
               ),
             ),
-            PopupMenuItem<String>(
-              value: 'edit', //Editar
-              child: Row(
-                children: [
-                  Icon(Icons.edit, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text('Editar'),
-                ],
-              ),
+            SizedBox(height: 20),
+            ListTile(
+              leading: Icon(Icons.pregnant_woman, color: Colors.purple),
+              title: Text('Registrar'),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddPregnancyDialog(context, treprod);
+              },
             ),
-            PopupMenuItem<String>(
-              value: 'delete', //Eliminar
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Eliminar'),
-                ],
-              ),
+            ListTile(
+              leading: Icon(Icons.history, color: Colors.orange),
+              title: Text('Ver Historial Reproductivo'),
+              onTap: () {
+                Navigator.pop(context);
+                _showReproductionHistory(context, treprod);
+              },
+            ),
+            SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar'),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Métodos placeholder para las funcionalidades de reproducción
+  void _showAddPregnancyDialog(
+    BuildContext context,
+    Map<String, dynamic> animal,
+  ) {
+    // Aquí implementarás el diálogo para registrar preñez
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Registrar Preñez"),
+        content: Text(
+          "Funcionalidad de registro de preñez para ${animal['nombregdo']}",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReproductionHistory(
+    BuildContext context,
+    Map<String, dynamic> animal,
+  ) {
+    // Aquí implementarás el historial reproductivo
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Historial Reproductivo"),
+        content: Text("Historial reproductivo de ${animal['nombregdo']}"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cerrar'),
+          ),
+        ],
       ),
     );
   }
@@ -374,36 +472,28 @@ class PagBecerros extends StatelessWidget {
     }
   }
 
-  Future<List<Widget>> _buildSearchSuggestions(
-    String query,
-    BuildContext context,
-  ) async {
+  Future<List<Widget>> _buildSearchSuggestions(String query) async {
     try {
-      final resultados = await SQLHelper.searchBecerros(query);
+      final resultados = await SQLHelper.searchAnimales(query);
 
       if (resultados.isEmpty) {
         return [
           ListTile(
-            title: Text("No se encontraron becerros"),
+            title: Text("No se encontraron animales"),
             textColor: Colors.grey,
           ),
         ];
       }
 
-      return resultados.map((tbecerros) {
+      return resultados.map((tganado) {
         return ListTile(
-          leading: Icon(
-            Symbols.pediatrics,
-            color: const Color.fromARGB(255, 77, 137, 95),
+          leading: FaIcon(
+            FontAwesomeIcons.cow,
+            color: const Color.fromARGB(255, 137, 77, 77),
           ),
-          title: Text(tbecerros['nombrebece'] ?? 'Sin nombre'),
-          subtitle: Text(
-            'Arete: ${tbecerros['aretebece']} - Sexo: ${tbecerros['sexobece']}',
-          ),
-          onTap: () {
-            Navigator.pop(context);
-            _showBecerroDetails(tbecerros, context);
-          },
+          title: Text(tganado['nombregdo'] ?? 'Sin nombre'),
+          subtitle: Text('${tganado['aretegdo']} - ${tganado['sexogdo']}'),
+          onTap: () {},
         );
       }).toList();
     } catch (e) {
@@ -416,17 +506,17 @@ class PagBecerros extends StatelessWidget {
     }
   }
 
-  void _showAddBecerroDialog(BuildContext context) {
-    final aretebeceController = TextEditingController();
-    final nombrebeceController = TextEditingController();
-    final pesobeceController = TextEditingController();
-    final razabeceController = TextEditingController();
-    final nacimientobeceController = TextEditingController();
-    final corralbeceController = TextEditingController();
-    final aretemadreController = TextEditingController();
-    final observacionbeceController = TextEditingController();
+  void _showAddAnimalDialog(BuildContext context) {
+    final areteController = TextEditingController();
+    final nombreController = TextEditingController();
+    final razaController = TextEditingController();
+    final fechaNacimientoController = TextEditingController();
+    final corralController = TextEditingController();
+    final alimentoController = TextEditingController();
+    final observacionController = TextEditingController();
 
-    String? estatusbece;
+    String? produccion;
+    String? estatusgdo;
     String? sexoSeleccionado;
     File? selectedImage;
     String? imagePath;
@@ -437,7 +527,7 @@ class PagBecerros extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text("Agregar Becerro"),
+              title: Text("Agregar Animal"),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -450,10 +540,10 @@ class PagBecerros extends StatelessWidget {
                       selectedImage = newImage;
                       imagePath = newPath;
                     }, dialogContext),
-
                     SizedBox(height: 16),
+
                     TextField(
-                      controller: aretebeceController,
+                      controller: areteController,
                       decoration: InputDecoration(
                         labelText: 'Arete',
                         border: OutlineInputBorder(),
@@ -462,18 +552,9 @@ class PagBecerros extends StatelessWidget {
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: nombrebeceController,
+                      controller: nombreController,
                       decoration: InputDecoration(
                         labelText: 'Nombre',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-
-                    TextField(
-                      controller: pesobeceController,
-                      decoration: InputDecoration(
-                        labelText: 'Peso al Nacer (kg)',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -518,7 +599,7 @@ class PagBecerros extends StatelessWidget {
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: razabeceController,
+                      controller: razaController,
                       decoration: InputDecoration(
                         labelText: 'Raza',
                         border: OutlineInputBorder(),
@@ -527,23 +608,32 @@ class PagBecerros extends StatelessWidget {
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: nacimientobeceController,
+                      controller: fechaNacimientoController,
                       decoration: InputDecoration(
                         labelText: 'Fecha de Nacimiento',
                         border: OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(Icons.calendar_today),
                           onPressed: () =>
-                              _selectDate(context, nacimientobeceController),
+                              _selectDate(context, fechaNacimientoController),
                         ),
                       ),
                     ),
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: corralbeceController,
+                      controller: corralController,
                       decoration: InputDecoration(
                         labelText: 'Corral',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: alimentoController,
+                      decoration: InputDecoration(
+                        labelText: 'Alimento',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -552,7 +642,46 @@ class PagBecerros extends StatelessWidget {
                     Container(
                       width: double.infinity,
                       child: DropdownButtonFormField<String>(
-                        value: estatusbece,
+                        value: produccion,
+                        decoration: InputDecoration(
+                          labelText: 'Tipo de producción',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Exportacion',
+                            child: Text('Exportación'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Rastro',
+                            child: Text('Rastro'),
+                          ),
+                          DropdownMenuItem(value: 'Cria', child: Text('Cría')),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            produccion = newValue;
+                          });
+                        },
+                        hint: Text('Selecciona la producción'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor selecciona la producción';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: estatusgdo,
                         decoration: InputDecoration(
                           labelText: 'Estatus',
                           border: OutlineInputBorder(),
@@ -581,7 +710,7 @@ class PagBecerros extends StatelessWidget {
                         ],
                         onChanged: (String? newValue) {
                           setState(() {
-                            estatusbece = newValue;
+                            estatusgdo = newValue;
                           });
                         },
                         hint: Text('Selecciona el estatus'),
@@ -596,16 +725,7 @@ class PagBecerros extends StatelessWidget {
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: aretemadreController,
-                      decoration: InputDecoration(
-                        labelText: 'Arete de la Madre',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-
-                    TextField(
-                      controller: observacionbeceController,
+                      controller: observacionController,
                       decoration: InputDecoration(
                         labelText: 'Observaciones',
                         border: OutlineInputBorder(),
@@ -621,35 +741,46 @@ class PagBecerros extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    final nuevoBecerro = {
-                      'aretebece': aretebeceController.text,
-                      'nombrebece': nombrebeceController.text,
-                      'pesobece': pesobeceController.text,
-                      'sexobece': sexoSeleccionado,
-                      'razabece': razabeceController.text,
-                      'nacimientobece': nacimientobeceController.text,
-                      'corralbece': corralbeceController.text,
-                      'estatusbece': estatusbece,
-                      'aretemadre': aretemadreController.text,
-                      'observacionbece': observacionbeceController.text,
-                      'fotobece': imagePath ?? '',
+                    if (areteController.text.isEmpty ||
+                        nombreController.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Arete y Nombre son obligatorios'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final nuevoAnimal = {
+                      'aretegdo': areteController.text,
+                      'nombregdo': nombreController.text,
+                      'sexogdo': sexoSeleccionado,
+                      'razagdo': razaController.text,
+                      'nacimientogdo': fechaNacimientoController.text,
+                      'corralgdo': corralController.text,
+                      'alimentogdo': alimentoController.text,
+                      'prodgdo': produccion,
+                      'estatusgdo': estatusgdo,
+                      'observaciongdo': observacionController.text,
+                      'fotogdo': imagePath ?? '',
                     };
 
                     try {
-                      await SQLHelper.createBecerro(nuevoBecerro);
+                      await SQLHelper.createAnimal(nuevoAnimal);
                       onRefresh();
                       Navigator.pop(context);
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Becerro agregado exitosamente'),
+                          content: Text('Animal agregado exitosamente'),
                           backgroundColor: Colors.green,
                         ),
                       );
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Error al agregar becerro: $e'),
+                          content: Text('Error al agregar animal: $e'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -797,10 +928,7 @@ class PagBecerros extends StatelessWidget {
     return Icon(Icons.photo_camera, size: 50, color: Colors.grey[400]);
   }
 
-  void _showHealthOptions(
-    BuildContext context,
-    Map<String, dynamic> tbecerros,
-  ) {
+  void _showHealthOptions(BuildContext context, Map<String, dynamic> animal) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -809,7 +937,7 @@ class PagBecerros extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Registros de Salud - ${tbecerros['nombrebece']}',
+              'Registros de Salud - ${animal['nombregdo']}',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -822,7 +950,7 @@ class PagBecerros extends StatelessWidget {
               title: Text('Agregar Registro de Salud'),
               onTap: () {
                 Navigator.pop(context);
-                _showAddHealthRecordDialog(context, tbecerros);
+                _showAddHealthRecordDialog(context, animal);
               },
             ),
             ListTile(
@@ -830,7 +958,7 @@ class PagBecerros extends StatelessWidget {
               title: Text('Ver Historial de Salud'),
               onTap: () {
                 Navigator.pop(context);
-                _showHealthHistory(context, tbecerros);
+                _showHealthHistory(context, animal);
               },
             ),
             SizedBox(height: 10),
@@ -846,14 +974,14 @@ class PagBecerros extends StatelessWidget {
 
   void _showAddHealthRecordDialog(
     BuildContext context,
-    Map<String, dynamic> tbecerros,
+    Map<String, dynamic> animal,
   ) {
     final veterinarioController = TextEditingController();
     final procedimientoController = TextEditingController();
+    final condicionController = TextEditingController();
     final fechaRevisionController = TextEditingController();
     final observacionesController = TextEditingController();
 
-    String? condicion;
     File? selectedImage;
     String? imagePath;
 
@@ -878,8 +1006,8 @@ class PagBecerros extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Symbols.pediatrics, // Usando Material Symbols
+                          FaIcon(
+                            FontAwesomeIcons.cow,
                             color: const Color.fromARGB(255, 137, 77, 77),
                           ),
                           SizedBox(width: 10),
@@ -888,11 +1016,11 @@ class PagBecerros extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  tbecerros['nombrebece'] ?? 'Sin nombre',
+                                  animal['nombregdo'] ?? 'Sin nombre',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 Text(
-                                  'Arete: ${tbecerros['aretebece'] ?? 'N/A'}',
+                                  'Arete: ${animal['aretegdo'] ?? 'N/A'}',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey[600],
@@ -924,41 +1052,11 @@ class PagBecerros extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    Container(
-                      width: double.infinity,
-                      child: DropdownButtonFormField<String>(
-                        value: condicion,
-                        decoration: InputDecoration(
-                          labelText: 'Condición de Salud',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 16,
-                          ),
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                            value: 'Buena',
-                            child: Text('Buena'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Regular',
-                            child: Text('Regular'),
-                          ),
-                          DropdownMenuItem(value: 'Mala', child: Text('Mala')),
-                        ],
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            condicion = newValue;
-                          });
-                        },
-                        hint: Text('Selecciona la condición'),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor selecciona la condición';
-                          }
-                          return null;
-                        },
+                    TextField(
+                      controller: condicionController,
+                      decoration: InputDecoration(
+                        labelText: 'Condición de Salud',
+                        border: OutlineInputBorder(),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -989,7 +1087,7 @@ class PagBecerros extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    // Selector de imagen adaptado para salud
+                    // Selector de imagen adaptado (NUEVO)
                     _buildImageSelectorForHealth(
                       setState,
                       selectedImage,
@@ -1024,11 +1122,11 @@ class PagBecerros extends StatelessWidget {
                     }
 
                     final nuevoRegistro = {
-                      'areteanimal': tbecerros['aretebece'] ?? '',
-                      'tipoanimal': 'becerro',
+                      'areteanimal': animal['aretegdo'] ?? '',
+                      'tipoanimal': 'adulto',
                       'nomvet': veterinarioController.text,
                       'procedimiento': procedimientoController.text,
-                      'condicionsalud': condicion,
+                      'condicionsalud': condicionController.text,
                       'fecharev': fechaRevisionController.text,
                       'observacionsalud': observacionesController.text,
                       'archivo':
@@ -1066,7 +1164,6 @@ class PagBecerros extends StatelessWidget {
     );
   }
 
-  // Método auxiliar para el selector de imágenes en salud
   Widget _buildImageSelectorForHealth(
     StateSetter setState,
     File? selectedImage,
@@ -1076,7 +1173,7 @@ class PagBecerros extends StatelessWidget {
   ) {
     return Column(
       children: [
-        // Título específico para salud
+        //titulo de la imagen
         Container(
           width: double.infinity,
           padding: EdgeInsets.only(bottom: 8),
@@ -1087,21 +1184,6 @@ class PagBecerros extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: const Color.fromARGB(255, 137, 77, 77),
             ),
-          ),
-        ),
-
-        // Subtítulo opcional
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.only(bottom: 12),
-          child: Text(
-            'Documentación visual del tratamiento',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-              fontStyle: FontStyle.italic,
-            ),
-            textAlign: TextAlign.center,
           ),
         ),
 
@@ -1210,7 +1292,7 @@ class PagBecerros extends StatelessWidget {
         if (selectedImage != null)
           TextButton(
             onPressed: () async {
-              // Eliminar archivo físico si existe
+              // Eliminar archivo si existe
               if (imagePath != null) {
                 await ImageService.deleteImage(imagePath);
               }
@@ -1224,41 +1306,41 @@ class PagBecerros extends StatelessWidget {
     );
   }
 
-  void _showEditBecerroDialog(
+  void _showEditAnimalDialog(
     BuildContext context,
-    Map<String, dynamic> tbecerros,
+    Map<String, dynamic> tganado,
   ) {
-    final aretebeceController = TextEditingController(
-      text: tbecerros['aretebece'] ?? '',
+    final areteController = TextEditingController(
+      text: tganado['aretegdo']?.toString() ?? '',
     );
-    final nombrebeceController = TextEditingController(
-      text: tbecerros['nombrebece'] ?? '',
-    );
-    final pesobeceController = TextEditingController(
-      text: tbecerros['pesobece']?.toString() ?? '',
-    );
-    final razabeceController = TextEditingController(
-      text: tbecerros['razabece']?.toString() ?? '',
-    );
-    final nacimientobeceController = TextEditingController(
-      text: tbecerros['nacimientobece']?.toString() ?? '',
-    );
-    final corralbeceController = TextEditingController(
-      text: tbecerros['corralbece']?.toString() ?? '',
-    );
-    final aretemadreController = TextEditingController(
-      text: tbecerros['aretemadre']?.toString() ?? '',
-    );
-    final observacionbeceController = TextEditingController(
-      text: tbecerros['observacionbece']?.toString() ?? '',
+    final nombreController = TextEditingController(
+      text: tganado['nombregdo']?.toString() ?? '',
     );
 
-    String? estatusbece = tbecerros['estatusbece']?.toString();
+    final razaController = TextEditingController(
+      text: tganado['razagdo']?.toString() ?? '',
+    );
+    final fechaNacimientoController = TextEditingController(
+      text: tganado['nacimientogdo']?.toString() ?? '',
+    );
+    final corralController = TextEditingController(
+      text: tganado['corralgdo']?.toString() ?? '',
+    );
+    final alimentoController = TextEditingController(
+      text: tganado['alimentogdo']?.toString() ?? '',
+    );
+    final produccionController = TextEditingController(
+      text: tganado['prodgdo']?.toString() ?? '',
+    );
 
-    String? sexoSeleccionado = tbecerros['sexobece']?.toString();
+    final observacionController = TextEditingController(
+      text: tganado['observaciongdo']?.toString() ?? '',
+    );
+    String? estatusgdo = tganado['estatusgdo']?.toString();
+    String? sexoSeleccionado = tganado['sexogdo']?.toString();
 
     File? selectedImage;
-    String? imagePath = tbecerros['fotobece']?.toString();
+    String? imagePath = tganado['fotogdo']?.toString();
 
     // Cargar imagen existente si hay una
     if (imagePath != null && imagePath!.isNotEmpty) {
@@ -1272,9 +1354,9 @@ class PagBecerros extends StatelessWidget {
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
-          builder: (BuildContext context, setState) {
+          builder: (context, setState) {
             return AlertDialog(
-              title: Text("Editar Becerro"),
+              title: Text("Editar Animal"),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -1289,7 +1371,7 @@ class PagBecerros extends StatelessWidget {
                     SizedBox(height: 16),
 
                     TextField(
-                      controller: aretebeceController,
+                      controller: areteController,
                       decoration: InputDecoration(
                         labelText: 'Arete',
                         border: OutlineInputBorder(),
@@ -1298,18 +1380,9 @@ class PagBecerros extends StatelessWidget {
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: nombrebeceController,
+                      controller: nombreController,
                       decoration: InputDecoration(
                         labelText: 'Nombre',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-
-                    TextField(
-                      controller: pesobeceController,
-                      decoration: InputDecoration(
-                        labelText: 'Peso',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -1354,7 +1427,7 @@ class PagBecerros extends StatelessWidget {
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: razabeceController,
+                      controller: razaController,
                       decoration: InputDecoration(
                         labelText: 'Raza',
                         border: OutlineInputBorder(),
@@ -1363,23 +1436,41 @@ class PagBecerros extends StatelessWidget {
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: nacimientobeceController,
+                      controller: fechaNacimientoController,
                       decoration: InputDecoration(
                         labelText: 'Fecha de Nacimiento',
                         border: OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(Icons.calendar_today),
                           onPressed: () =>
-                              _selectDate(context, nacimientobeceController),
+                              _selectDate(context, fechaNacimientoController),
                         ),
                       ),
                     ),
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: corralbeceController,
+                      controller: corralController,
                       decoration: InputDecoration(
                         labelText: 'Corral',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: alimentoController,
+                      decoration: InputDecoration(
+                        labelText: 'Alimento',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: produccionController,
+                      decoration: InputDecoration(
+                        labelText: 'Producción',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -1388,7 +1479,7 @@ class PagBecerros extends StatelessWidget {
                     Container(
                       width: double.infinity,
                       child: DropdownButtonFormField<String>(
-                        value: estatusbece,
+                        value: estatusgdo,
                         decoration: InputDecoration(
                           labelText: 'Estatus',
                           border: OutlineInputBorder(),
@@ -1406,18 +1497,10 @@ class PagBecerros extends StatelessWidget {
                             value: 'Inactivo',
                             child: Text('Inactivo'),
                           ),
-                          DropdownMenuItem(
-                            value: 'Vendido',
-                            child: Text('Vendido'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Muerto',
-                            child: Text('Muerto'),
-                          ),
                         ],
                         onChanged: (String? newValue) {
                           setState(() {
-                            estatusbece = newValue;
+                            estatusgdo = newValue;
                           });
                         },
                         hint: Text('Selecciona el estatus'),
@@ -1432,22 +1515,12 @@ class PagBecerros extends StatelessWidget {
                     SizedBox(height: 12),
 
                     TextField(
-                      controller: aretemadreController,
-                      decoration: InputDecoration(
-                        labelText: 'Arete de la Madre',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-
-                    TextField(
-                      controller: observacionbeceController,
+                      controller: observacionController,
                       decoration: InputDecoration(
                         labelText: 'Observaciones',
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    SizedBox(height: 12),
                   ],
                 ),
               ),
@@ -1458,38 +1531,48 @@ class PagBecerros extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    final becerroActualizado = {
-                      'aretebece': aretebeceController.text,
-                      'nombrebece': nombrebeceController.text,
-                      'pesobece': pesobeceController.text,
-                      'sexobece': sexoSeleccionado,
-                      'razabece': razabeceController.text,
-                      'nacimientobece': nacimientobeceController.text,
-                      'corralbece': corralbeceController.text,
-                      'estatusbece': estatusbece,
-                      'aretemadre': aretemadreController.text,
-                      'observacionbece': observacionbeceController.text,
-                      'fotobece': imagePath ?? '',
+                    if (tganado['idgdo'] == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: ID del animal no válido'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final animalActualizado = {
+                      'aretegdo': areteController.text,
+                      'nombregdo': nombreController.text,
+                      'sexogdo': sexoSeleccionado,
+                      'razagdo': razaController.text,
+                      'nacimientogdo': fechaNacimientoController.text,
+                      'corralgdo': corralController.text,
+                      'alimentogdo': alimentoController.text,
+                      'prodgdo': produccionController.text,
+                      'estatusgdo': estatusgdo,
+                      'observaciongdo': observacionController.text,
+                      'fotogdo': imagePath ?? '',
                     };
 
                     try {
-                      await SQLHelper.updateBecerro(
-                        tbecerros['idbece'],
-                        becerroActualizado,
+                      await SQLHelper.updateAnimal(
+                        tganado['idgdo'],
+                        animalActualizado,
                       );
                       onRefresh();
                       Navigator.pop(context);
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Becerro actualizado exitosamente'),
+                          content: Text('Animal actualizado exitosamente'),
                           backgroundColor: Colors.green,
                         ),
                       );
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Error al actualizar becerro: $e'),
+                          content: Text('Error al actualizar animal: $e'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -1507,15 +1590,15 @@ class PagBecerros extends StatelessWidget {
 
   void _showDeleteConfirmation(
     BuildContext context,
-    Map<String, dynamic> tbecerros,
+    Map<String, dynamic> tganado,
   ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Eliminar Becerro"),
+          title: Text("Eliminar Animal"),
           content: Text(
-            "¿Estás seguro de que quieres eliminar a ${tbecerros['nombrebece']}?",
+            "¿Estás seguro de que quieres eliminar a ${tganado['nombregdo']}?",
           ),
           actions: [
             TextButton(
@@ -1525,20 +1608,26 @@ class PagBecerros extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 try {
-                  await SQLHelper.deleteBecerro(tbecerros['idbece']);
+                  // Eliminar imagen si existe
+                  final imagePath = tganado['fotogdo']?.toString();
+                  if (imagePath != null && imagePath.isNotEmpty) {
+                    await ImageService.deleteImage(imagePath);
+                  }
+
+                  await SQLHelper.deleteAnimal(tganado['idgdo']);
                   onRefresh();
                   Navigator.pop(context);
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Becerro eliminado exitosamente'),
+                      content: Text('Animal eliminado exitosamente'),
                       backgroundColor: Colors.green,
                     ),
                   );
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error al eliminar becerro: $e'),
+                      content: Text('Error al eliminar animal: $e'),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -1554,13 +1643,13 @@ class PagBecerros extends StatelessWidget {
 }
 
 class AnimalDetailsDialog extends StatelessWidget {
-  final Map<String, dynamic> tbecerros;
+  final Map<String, dynamic> animal;
 
-  const AnimalDetailsDialog({super.key, required this.tbecerros});
+  const AnimalDetailsDialog({super.key, required this.animal});
 
   @override
   Widget build(BuildContext context) {
-    final imagePath = tbecerros['fotobece']?.toString();
+    final imagePath = animal['fotogdo']?.toString();
 
     return Dialog(
       insetPadding: EdgeInsets.all(20),
@@ -1577,7 +1666,7 @@ class AnimalDetailsDialog extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Detalles del Becerro',
+                    'Detalles del Animal',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -1608,8 +1697,8 @@ class AnimalDetailsDialog extends StatelessWidget {
               // Información adicional
               _buildAdditionalInfoSection(),
 
-              if (tbecerros['observacionbece'] != null &&
-                  tbecerros['observacionbece'].toString().isNotEmpty)
+              if (animal['observaciongdo'] != null &&
+                  animal['observaciongdo'].toString().isNotEmpty)
                 Column(
                   children: [SizedBox(height: 20), _buildObservationsSection()],
                 ),
@@ -1706,13 +1795,13 @@ class AnimalDetailsDialog extends StatelessWidget {
             ),
           ),
           SizedBox(height: 12),
-          _buildInfoRow('Nombre', tbecerros['nombrebece'] ?? 'No especificado'),
-          _buildInfoRow('Arete', tbecerros['aretebece'] ?? 'No especificado'),
-          _buildInfoRow('Peso', tbecerros['pesobece'] ?? 'No especificado'),
-          _buildInfoRow('Sexo', tbecerros['sexobece'] ?? 'No especificado'),
+          _buildInfoRow('Nombre', animal['nombregdo'] ?? 'No especificado'),
+          _buildInfoRow('Arete', animal['aretegdo'] ?? 'No especificado'),
+          _buildInfoRow('Sexo', animal['sexogdo'] ?? 'No especificado'),
+          _buildInfoRow('Raza', animal['razagdo'] ?? 'No especificado'),
           _buildInfoRow(
             'Fecha Nacimiento',
-            tbecerros['nacimientobece'] ?? 'No especificado',
+            animal['nacimientogdo'] ?? 'No especificado',
           ),
         ],
       ),
@@ -1740,21 +1829,13 @@ class AnimalDetailsDialog extends StatelessWidget {
             ),
           ),
           SizedBox(height: 12),
-          _buildInfoRow('razabece', tbecerros['razabece'] ?? 'No especificado'),
+          _buildInfoRow('Corral', animal['corralgdo'] ?? 'No especificado'),
+          _buildInfoRow('Alimento', animal['alimentogdo'] ?? 'No especificado'),
           _buildInfoRow(
-            'nacimientobece',
-            tbecerros['nacimientobece'] ?? 'No especificado',
+            'Tipo de Producción',
+            animal['prodgdo'] ?? 'No especificado',
           ),
-          _buildInfoRow('Corral', tbecerros['corralbece'] ?? 'No especificado'),
-          _buildInfoRow(
-            'Estatus',
-            tbecerros['estatusbece'] ?? 'No especificado',
-          ),
-
-          _buildInfoRow(
-            'Arete Madre',
-            tbecerros['aretemadre'] ?? 'No especificado',
-          ),
+          _buildInfoRow('Estatus', animal['estatusgdo'] ?? 'No especificado'),
         ],
       ),
     );
@@ -1782,7 +1863,7 @@ class AnimalDetailsDialog extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            tbecerros['observacionbece'].toString(),
+            animal['observaciongdo'].toString(),
             style: TextStyle(color: Colors.grey[700], fontSize: 14),
           ),
         ],
@@ -1816,18 +1897,18 @@ class AnimalDetailsDialog extends StatelessWidget {
   }
 }
 
-void _showHealthHistory(BuildContext context, Map<String, dynamic> tbecerros) {
+void _showHealthHistory(BuildContext context, Map<String, dynamic> animal) {
   showDialog(
     context: context,
-    builder: (context) => HealthHistoryDialog(tbecerros: tbecerros),
+    builder: (context) => HealthHistoryDialog(animal: animal),
   );
 }
 
 // esta clase es para mostrar el historial d salud del animal desde el botoncito, sale ocmo popup xD
 class HealthHistoryDialog extends StatefulWidget {
-  final Map<String, dynamic> tbecerros;
+  final Map<String, dynamic> animal;
 
-  const HealthHistoryDialog({super.key, required this.tbecerros});
+  const HealthHistoryDialog({super.key, required this.animal});
 
   @override
   State<HealthHistoryDialog> createState() => _HealthHistoryDialogState();
@@ -1846,8 +1927,8 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
   Future<void> _loadRegistrosSalud() async {
     try {
       final registros = await SQLHelper.getRegistrosSaludPorAreteYTipo(
-        widget.tbecerros['aretebece'] ?? '',
-        'becerro',
+        widget.animal['areteanimal'] ?? '',
+        'adulto',
       );
       setState(() {
         _registrosSalud = registros;
@@ -1859,369 +1940,99 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
     }
   }
 
-  void _showImageDialog(String imagePath, String title) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 137, 77, 77),
-                ),
-              ),
-            ),
-            FutureBuilder<bool>(
-              future: ImageService.imageExists(imagePath),
-              builder: (context, snapshot) {
-                if (snapshot.hasData == true && snapshot.data!) {
-                  return Container(
-                    width: 300,
-                    height: 300,
-                    child: Image.file(File(imagePath), fit: BoxFit.cover),
-                  );
-                } else {
-                  return Container(
-                    width: 300,
-                    height: 200,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error, size: 50, color: Colors.grey),
-                          SizedBox(height: 8),
-                          Text('Imagen no disponible'),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cerrar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: EdgeInsets.all(20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header con título y botón cerrar (igual que en AnimalDetailsDialog)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Historial de Salud - ${widget.tbecerros['nombrebece']}',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 137, 77, 77),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close, size: 24),
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
-                ],
+      child: Column(
+        children: [
+          AppBar(
+            backgroundColor: const Color.fromARGB(255, 137, 77, 77),
+            title: Text(
+              'Historial del arete: ${widget.animal['aretegdo']}',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
               ),
-
-              SizedBox(height: 20),
-
-              // Información del becerro
-              _buildBecerroInfoSection(),
-
-              SizedBox(height: 20),
-
-              if (_isLoading)
-                Center(child: CircularProgressIndicator())
-              else if (_registrosSalud.isEmpty)
-                _buildEmptyState()
-              else
-                _buildRegistrosSection(),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBecerroInfoSection() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 250, 245, 245),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Información del Becerro',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: const Color.fromARGB(255, 137, 77, 77),
-              fontSize: 16,
-            ),
-          ),
-          SizedBox(height: 12),
-          _buildInfoRow(
-            'Nombre',
-            widget.tbecerros['nombrebece'] ?? 'No especificado',
-          ),
-          _buildInfoRow(
-            'Arete',
-            widget.tbecerros['aretebece'] ?? 'No especificado',
-          ),
-          _buildInfoRow(
-            'Peso',
-            widget.tbecerros['pesobece'] ?? 'No especificado',
-          ),
-          _buildInfoRow(
-            'Raza',
-            widget.tbecerros['razabece'] ?? 'No especificado',
-          ),
-          _buildInfoRow(
-            'Estatus',
-            widget.tbecerros['estatusbece'] ?? 'No especificado',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 250, 245, 245),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Symbols.medical_services, // Usando el icono de Material Symbols
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          SizedBox(height: 16),
-          Text(
-            'No hay registros de salud',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Agrega el primer registro desde el menú de opciones',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRegistrosSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Registros de Salud (${_registrosSalud.length})',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color.fromARGB(255, 137, 77, 77),
-          ),
-        ),
-        SizedBox(height: 16),
-        ..._registrosSalud.asMap().entries.map((entry) {
-          final index = entry.key;
-          final registro = entry.value;
-          return _buildRegistroCard(registro, index);
-        }).toList(),
-      ],
-    );
-  }
-
-  Widget _buildRegistroCard(Map<String, dynamic> registro, int index) {
-    final hasImage =
-        registro['archivo'] != null &&
-        registro['archivo'].toString().isNotEmpty;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 250, 245, 245),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header del registro
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 137, 77, 77).withOpacity(0.1),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(10),
-                topRight: Radius.circular(10),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Symbols.medical_services, // Usando Material Symbols
-                  color: const Color.fromARGB(255, 137, 77, 77),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Registro ${index + 1} - ${registro['fecharev'] ?? 'Fecha no especificada'}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 137, 77, 77),
-                      fontSize: 16,
+          Expanded(
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : _registrosSalud.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.medical_services,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No hay registros de salud',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Agrega el primer registro',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                if (hasImage)
-                  IconButton(
-                    icon: Icon(Icons.photo_library, color: Colors.blue),
-                    onPressed: () {
-                      _showImageDialog(
-                        registro['archivo'].toString(),
-                        registro['procedimiento'] ?? 'Imagen del procedimiento',
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.all(16),
+                    itemCount: _registrosSalud.length,
+                    itemBuilder: (context, index) {
+                      final registro = _registrosSalud[index];
+                      return Card(
+                        margin: EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.medical_services,
+                            color: Colors.green,
+                          ),
+                          title: Text(
+                            registro['procedimiento'] ?? 'Sin procedimiento',
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Veterinario: ${registro['nomvet'] ?? 'No especificado'}',
+                              ),
+                              Text(
+                                'Fecha: ${registro['fecharev'] ?? 'No especificada'}',
+                              ),
+                              if (registro['condicion_salud'] != null)
+                                Text(
+                                  'Condición: ${registro['condicionsalud']}',
+                                ),
+                            ],
+                          ),
+                          trailing:
+                              registro['archivo_adjunto'] != null &&
+                                  registro['archivo_adjunto']
+                                      .toString()
+                                      .isNotEmpty
+                              ? Icon(Icons.attach_file, color: Colors.blue)
+                              : null,
+                          onTap: () {
+                            // Podrías mostrar más detalles aquí
+                          },
+                        ),
                       );
                     },
                   ),
-              ],
-            ),
-          ),
-
-          // Contenido del registro
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildRegistroInfoRow(
-                  'Procedimiento',
-                  registro['procedimiento'] ?? 'No especificado',
-                ),
-                _buildRegistroInfoRow(
-                  'Veterinario',
-                  registro['nomvet'] ?? 'No especificado',
-                ),
-                _buildRegistroInfoRow(
-                  'Condición de Salud',
-                  registro['condicionsalud'] ?? 'No especificado',
-                ),
-                _buildRegistroInfoRow(
-                  'Fecha de Revisión',
-                  registro['fecharev'] ?? 'No especificada',
-                ),
-                if (registro['observacionsalud'] != null &&
-                    registro['observacionsalud'].toString().isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 8),
-                      Text(
-                        'Observaciones:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: const Color.fromARGB(255, 137, 77, 77),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        registro['observacionsalud'].toString(),
-                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: const Color.fromARGB(255, 137, 77, 77),
-              ),
-            ),
-          ),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(value, style: TextStyle(color: Colors.grey[700])),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRegistroInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 140,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: const Color.fromARGB(255, 137, 77, 77),
-              ),
-            ),
-          ),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(value, style: TextStyle(color: Colors.grey[700])),
           ),
         ],
       ),

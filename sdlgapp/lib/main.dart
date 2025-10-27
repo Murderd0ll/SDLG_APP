@@ -57,13 +57,13 @@ class _InicioState extends State<Inicio> {
     print("=== INICIALIZANDO BASE DE DATOS ===");
 
     await SQLHelper.debugDatabaseLocation();
-    await SQLHelper.resetDatabase(); // ****************COMENTAR ESTA LÍNEA DESPUÉS DE LA PRIMERA EJECUCIÓN*********************************
+    //await SQLHelper.resetDatabase(); // ****************COMENTAR ESTA LÍNEA DESPUÉS DE LA PRIMERA EJECUCIÓN*********************************
     print("=== BASE DE DATOS REINICIADA ===");
 
-    // Verificar el estado de la base de datos
+    // este es para verificar el estado de la base de datos
     await SQLHelper.debugDatabaseStatus();
 
-    // Cargar datos de la página actual
+    // este es para cargar datos de la página actual
     _cargarDatosPagina(_pagActual);
   }
 
@@ -103,11 +103,11 @@ class _InicioState extends State<Inicio> {
   // Cargar datos cuando cambia la página
   void _cargarDatosPagina(int pagina) {
     switch (pagina) {
-      case 2: // Animales
-        _refreshAnimales();
-        break;
       case 1: // Becerros
         _refreshBecerros();
+        break;
+      case 2: // Animales
+        _refreshAnimales();
         break;
       case 3: // Propietarios
         _refreshPropietarios();
@@ -184,7 +184,7 @@ class _InicioState extends State<Inicio> {
       _pagActual = nuevaPagina;
       if (nuevaPagina < 3) {
         _bottomNavIndex = nuevaPagina;
-      }
+      } else {}
     });
     _cargarDatosPagina(nuevaPagina);
     Navigator.pop(context);
@@ -292,7 +292,7 @@ class _InicioState extends State<Inicio> {
       body: _paginas[_pagActual],
 
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: const Color.fromARGB(255, 60, 51, 223),
+        selectedItemColor: const Color.fromARGB(255, 182, 128, 128),
         unselectedItemColor: Colors.grey,
         onTap: _cambiarPaginaDesdeBottomNav,
         currentIndex: _bottomNavIndex,

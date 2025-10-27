@@ -1,5 +1,3 @@
-// ignore_for_file: unused_local_variable
-
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -10,7 +8,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class ImageService {
   static final ImagePicker _picker = ImagePicker();
-  // Tomar foto con la camara del celular
+  // Tomar foto con cámara
 
   static Future<File?> takePhoto() async {
     try {
@@ -26,7 +24,7 @@ class ImageService {
     }
   }
 
-  // Seleccionar foto de la galería
+  // Seleccionar de galería
   static Future<File?> pickPhoto() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -44,7 +42,7 @@ class ImageService {
   // Guardar imagen en directorio de la app
   static Future<String?> saveImageToAppDirectory(File imageFile) async {
     try {
-      // Obtener directorio de la imagen
+      // Obtener directorio de documentos
       final Directory appDir = await getApplicationDocumentsDirectory();
       final String imagesDirPath = '${appDir.path}/becerro_images';
 
@@ -155,10 +153,7 @@ class PagBecerros extends StatelessWidget {
                             ),
                           ];
                         }
-                        return _buildSearchSuggestions(
-                          controller.text,
-                          context,
-                        );
+                        return _buildSearchSuggestions(controller.text);
                       },
                 ),
               ),
@@ -166,14 +161,14 @@ class PagBecerros extends StatelessWidget {
             SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 137, 77, 77).withOpacity(0.2),
+                color: const Color.fromARGB(255, 77, 137, 95).withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
                 onPressed: () => _showAddBecerroDialog(context),
                 icon: Icon(
                   Icons.add,
-                  color: const Color.fromARGB(255, 182, 128, 128),
+                  color: const Color.fromARGB(255, 77, 137, 95),
                 ),
                 tooltip: 'Agregar Becerro',
               ),
@@ -374,10 +369,7 @@ class PagBecerros extends StatelessWidget {
     }
   }
 
-  Future<List<Widget>> _buildSearchSuggestions(
-    String query,
-    BuildContext context,
-  ) async {
+  Future<List<Widget>> _buildSearchSuggestions(String query) async {
     try {
       final resultados = await SQLHelper.searchBecerros(query);
 
@@ -397,12 +389,9 @@ class PagBecerros extends StatelessWidget {
             color: const Color.fromARGB(255, 77, 137, 95),
           ),
           title: Text(tbecerros['nombrebece'] ?? 'Sin nombre'),
-          subtitle: Text(
-            'Arete: ${tbecerros['aretebece']} - Sexo: ${tbecerros['sexobece']}',
-          ),
+          subtitle: Text('pesobece: ${tbecerros['pesobece']}'),
           onTap: () {
-            Navigator.pop(context);
-            _showBecerroDetails(tbecerros, context);
+            // Aquí puedes navegar a los detalles del becerro
           },
         );
       }).toList();
@@ -854,8 +843,8 @@ class PagBecerros extends StatelessWidget {
     final observacionesController = TextEditingController();
 
     String? condicion;
-    File? selectedImage;
-    String? imagePath;
+    File? selectedFile;
+    String? filePath;
 
     showDialog(
       context: context,
@@ -879,7 +868,7 @@ class PagBecerros extends StatelessWidget {
                       child: Row(
                         children: [
                           Icon(
-                            Symbols.pediatrics, // Usando Material Symbols
+                            Icons.pets,
                             color: const Color.fromARGB(255, 137, 77, 77),
                           ),
                           SizedBox(width: 10),
@@ -989,15 +978,11 @@ class PagBecerros extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    // Selector de imagen adaptado para salud
-                    _buildImageSelectorForHealth(
+                    // Selector de archivo
+                    _buildFileSelector(
                       setState,
-                      selectedImage,
-                      imagePath,
-                      (File? newImage, String? newPath) {
-                        selectedImage = newImage;
-                        imagePath = newPath;
-                      },
+                      selectedFile,
+                      filePath,
                       dialogContext,
                     ),
                   ],
@@ -1024,15 +1009,16 @@ class PagBecerros extends StatelessWidget {
                     }
 
                     final nuevoRegistro = {
-                      'areteanimal': tbecerros['aretebece'] ?? '',
+                      'areteanimal':
+                          tbecerros['aretebece'] ??
+                          '', // Solo usamos el arete de la tabla tbecerro
                       'tipoanimal': 'becerro',
                       'nomvet': veterinarioController.text,
                       'procedimiento': procedimientoController.text,
                       'condicionsalud': condicion,
                       'fecharev': fechaRevisionController.text,
                       'observacionsalud': observacionesController.text,
-                      'archivo':
-                          imagePath ?? '', // Cambiado de filePath a imagePath
+                      'archivo': filePath ?? '',
                     };
 
                     try {
@@ -1066,159 +1052,103 @@ class PagBecerros extends StatelessWidget {
     );
   }
 
-  // Método auxiliar para el selector de imágenes en salud
-  Widget _buildImageSelectorForHealth(
+  Widget _buildFileSelector(
     StateSetter setState,
-    File? selectedImage,
-    String? imagePath,
-    Function(File?, String?) onImageChanged,
+    File? selectedFile,
+    String? filePath,
     BuildContext dialogContext,
   ) {
     return Column(
       children: [
-        // Título específico para salud
         Container(
+          height: 100,
           width: double.infinity,
-          padding: EdgeInsets.only(bottom: 8),
-          child: Text(
-            'Imagen del Procedimiento Médico',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color.fromARGB(255, 137, 77, 77),
-            ),
-          ),
-        ),
-
-        // Subtítulo opcional
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.only(bottom: 12),
-          child: Text(
-            'Documentación visual del tratamiento',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-              fontStyle: FontStyle.italic,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-
-        // Vista previa de la imagen
-        Container(
-          height: 150,
-          width: 150,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: Colors.grey),
             color: Colors.grey[100],
           ),
-          child: FutureBuilder<bool>(
-            future: selectedImage != null
-                ? ImageService.imageExists(imagePath)
-                : Future.value(false),
-            builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.data! && selectedImage != null) {
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.file(
-                    selectedImage,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildPlaceholderIcon();
-                    },
+          child: selectedFile != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.attach_file, size: 40, color: Colors.blue),
+                      SizedBox(height: 8),
+                      Text(
+                        'Archivo seleccionado',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      Text(
+                        '(Imagen)',
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                )
+              : Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.attach_file,
+                        size: 40,
+                        color: Colors.grey[400],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Sin archivo adjunto',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+        SizedBox(height: 10),
+        ElevatedButton.icon(
+          onPressed: () async {
+            // Para PDFs se ocupa  el package file_picker
+            // Por ahora  solo usa imágenes
+            final image = await ImageService.pickPhoto();
+            if (image != null) {
+              final savedPath = await ImageService.saveImageToAppDirectory(
+                image,
+              );
+              if (savedPath != null) {
+                setState(() {
+                  selectedFile = image;
+                  filePath = savedPath;
+                });
+                // USAR dialogContext EN LUGAR DEL CAST
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  SnackBar(
+                    content: Text('Imagen adjuntada correctamente'),
+                    backgroundColor: Colors.green,
                   ),
                 );
               } else {
-                return _buildPlaceholderIcon();
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al guardar la imagen'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
-            },
-          ),
+            }
+          },
+
+          icon: Icon(Icons.attach_file),
+          label: Text('Subir Imagen'),
         ),
-
-        SizedBox(height: 10),
-
-        // Botones de cámara y galería
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton.icon(
-              onPressed: () async {
-                final image = await ImageService.takePhoto();
-                if (image != null) {
-                  final savedPath = await ImageService.saveImageToAppDirectory(
-                    image,
-                  );
-                  if (savedPath != null) {
-                    setState(() {
-                      onImageChanged(image, savedPath);
-                    });
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Imagen tomada correctamente'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Error al guardar la imagen'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              icon: Icon(Icons.camera_alt),
-              label: Text('Cámara'),
-            ),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final image = await ImageService.pickPhoto();
-                if (image != null) {
-                  final savedPath = await ImageService.saveImageToAppDirectory(
-                    image,
-                  );
-                  if (savedPath != null) {
-                    setState(() {
-                      onImageChanged(image, savedPath);
-                    });
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Imagen seleccionada correctamente'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Error al guardar la imagen'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              icon: Icon(Icons.photo_library),
-              label: Text('Galería'),
-            ),
-          ],
-        ),
-
-        // Botón para quitar foto
-        if (selectedImage != null)
+        if (selectedFile != null)
           TextButton(
-            onPressed: () async {
-              // Eliminar archivo físico si existe
-              if (imagePath != null) {
-                await ImageService.deleteImage(imagePath);
-              }
+            onPressed: () {
               setState(() {
-                onImageChanged(null, null);
+                selectedFile = null;
+                filePath = null;
               });
             },
-            child: Text('Quitar imagen', style: TextStyle(color: Colors.red)),
+            child: Text('Quitar archivo', style: TextStyle(color: Colors.red)),
           ),
       ],
     );
@@ -1859,369 +1789,99 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
     }
   }
 
-  void _showImageDialog(String imagePath, String title) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 137, 77, 77),
-                ),
-              ),
-            ),
-            FutureBuilder<bool>(
-              future: ImageService.imageExists(imagePath),
-              builder: (context, snapshot) {
-                if (snapshot.hasData == true && snapshot.data!) {
-                  return Container(
-                    width: 300,
-                    height: 300,
-                    child: Image.file(File(imagePath), fit: BoxFit.cover),
-                  );
-                } else {
-                  return Container(
-                    width: 300,
-                    height: 200,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error, size: 50, color: Colors.grey),
-                          SizedBox(height: 8),
-                          Text('Imagen no disponible'),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cerrar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: EdgeInsets.all(20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header con título y botón cerrar (igual que en AnimalDetailsDialog)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Historial de Salud - ${widget.tbecerros['nombrebece']}',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 137, 77, 77),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close, size: 24),
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
-                ],
+      child: Column(
+        children: [
+          AppBar(
+            backgroundColor: const Color.fromARGB(255, 137, 77, 77),
+            title: Text(
+              'Historial del arete: ${widget.tbecerros['aretebece']}',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
               ),
-
-              SizedBox(height: 20),
-
-              // Información del becerro
-              _buildBecerroInfoSection(),
-
-              SizedBox(height: 20),
-
-              if (_isLoading)
-                Center(child: CircularProgressIndicator())
-              else if (_registrosSalud.isEmpty)
-                _buildEmptyState()
-              else
-                _buildRegistrosSection(),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBecerroInfoSection() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 250, 245, 245),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Información del Becerro',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: const Color.fromARGB(255, 137, 77, 77),
-              fontSize: 16,
-            ),
-          ),
-          SizedBox(height: 12),
-          _buildInfoRow(
-            'Nombre',
-            widget.tbecerros['nombrebece'] ?? 'No especificado',
-          ),
-          _buildInfoRow(
-            'Arete',
-            widget.tbecerros['aretebece'] ?? 'No especificado',
-          ),
-          _buildInfoRow(
-            'Peso',
-            widget.tbecerros['pesobece'] ?? 'No especificado',
-          ),
-          _buildInfoRow(
-            'Raza',
-            widget.tbecerros['razabece'] ?? 'No especificado',
-          ),
-          _buildInfoRow(
-            'Estatus',
-            widget.tbecerros['estatusbece'] ?? 'No especificado',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 250, 245, 245),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Symbols.medical_services, // Usando el icono de Material Symbols
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          SizedBox(height: 16),
-          Text(
-            'No hay registros de salud',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Agrega el primer registro desde el menú de opciones',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRegistrosSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Registros de Salud (${_registrosSalud.length})',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color.fromARGB(255, 137, 77, 77),
-          ),
-        ),
-        SizedBox(height: 16),
-        ..._registrosSalud.asMap().entries.map((entry) {
-          final index = entry.key;
-          final registro = entry.value;
-          return _buildRegistroCard(registro, index);
-        }).toList(),
-      ],
-    );
-  }
-
-  Widget _buildRegistroCard(Map<String, dynamic> registro, int index) {
-    final hasImage =
-        registro['archivo'] != null &&
-        registro['archivo'].toString().isNotEmpty;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 250, 245, 245),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header del registro
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 137, 77, 77).withOpacity(0.1),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(10),
-                topRight: Radius.circular(10),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Symbols.medical_services, // Usando Material Symbols
-                  color: const Color.fromARGB(255, 137, 77, 77),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Registro ${index + 1} - ${registro['fecharev'] ?? 'Fecha no especificada'}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 137, 77, 77),
-                      fontSize: 16,
+          Expanded(
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : _registrosSalud.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.medical_services,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No hay registros de salud',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Agrega el primer registro',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                if (hasImage)
-                  IconButton(
-                    icon: Icon(Icons.photo_library, color: Colors.blue),
-                    onPressed: () {
-                      _showImageDialog(
-                        registro['archivo'].toString(),
-                        registro['procedimiento'] ?? 'Imagen del procedimiento',
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.all(16),
+                    itemCount: _registrosSalud.length,
+                    itemBuilder: (context, index) {
+                      final registro = _registrosSalud[index];
+                      return Card(
+                        margin: EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.medical_services,
+                            color: Colors.green,
+                          ),
+                          title: Text(
+                            registro['procedimiento'] ?? 'Sin procedimiento',
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Veterinario: ${registro['nomvet'] ?? 'No especificado'}',
+                              ),
+                              Text(
+                                'Fecha: ${registro['fecharev'] ?? 'No especificada'}',
+                              ),
+                              if (registro['condicionsalud'] != null)
+                                Text(
+                                  'Condición: ${registro['condicionsalud']}',
+                                ),
+                            ],
+                          ),
+                          trailing:
+                              registro['archivo_adjunto'] != null &&
+                                  registro['archivo_adjunto']
+                                      .toString()
+                                      .isNotEmpty
+                              ? Icon(Icons.attach_file, color: Colors.blue)
+                              : null,
+                          onTap: () {
+                            // Podrías mostrar más detalles aquí
+                          },
+                        ),
                       );
                     },
                   ),
-              ],
-            ),
-          ),
-
-          // Contenido del registro
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildRegistroInfoRow(
-                  'Procedimiento',
-                  registro['procedimiento'] ?? 'No especificado',
-                ),
-                _buildRegistroInfoRow(
-                  'Veterinario',
-                  registro['nomvet'] ?? 'No especificado',
-                ),
-                _buildRegistroInfoRow(
-                  'Condición de Salud',
-                  registro['condicionsalud'] ?? 'No especificado',
-                ),
-                _buildRegistroInfoRow(
-                  'Fecha de Revisión',
-                  registro['fecharev'] ?? 'No especificada',
-                ),
-                if (registro['observacionsalud'] != null &&
-                    registro['observacionsalud'].toString().isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 8),
-                      Text(
-                        'Observaciones:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: const Color.fromARGB(255, 137, 77, 77),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        registro['observacionsalud'].toString(),
-                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: const Color.fromARGB(255, 137, 77, 77),
-              ),
-            ),
-          ),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(value, style: TextStyle(color: Colors.grey[700])),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRegistroInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 140,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: const Color.fromARGB(255, 137, 77, 77),
-              ),
-            ),
-          ),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(value, style: TextStyle(color: Colors.grey[700])),
           ),
         ],
       ),

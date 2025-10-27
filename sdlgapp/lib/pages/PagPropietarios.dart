@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -154,7 +156,10 @@ class PagPropietarios extends StatelessWidget {
                             ),
                           ];
                         }
-                        return _buildSearchSuggestions(controller.text);
+                        return _buildSearchSuggestions(
+                          controller.text,
+                          context,
+                        );
                       },
                 ),
               ),
@@ -191,7 +196,7 @@ class PagPropietarios extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.pets, size: 64, color: Colors.grey[400]),
+            Icon(Icons.person, size: 64, color: Colors.grey[400]),
             SizedBox(height: 16),
             Text(
               "No hay propietarios registrados",
@@ -247,7 +252,7 @@ class PagPropietarios extends StatelessWidget {
                   128,
                 ).withOpacity(0.2),
                 child: Icon(
-                  Icons.pets,
+                  Icons.person,
                   color: const Color.fromARGB(255, 137, 77, 77),
                 ),
               );
@@ -331,7 +336,10 @@ class PagPropietarios extends StatelessWidget {
     );
   }
 
-  Future<List<Widget>> _buildSearchSuggestions(String query) async {
+  Future<List<Widget>> _buildSearchSuggestions(
+    String query,
+    BuildContext context,
+  ) async {
     try {
       final resultados = await SQLHelper.searchPropietarios(query);
 
@@ -347,14 +355,17 @@ class PagPropietarios extends StatelessWidget {
       return resultados.map((tpropietarios) {
         return ListTile(
           leading: Icon(
-            Icons.pets,
+            Icons.person,
             color: const Color.fromARGB(255, 137, 77, 77),
           ),
           title: Text(tpropietarios['nombreprop'] ?? 'Sin nombre'),
           subtitle: Text(
-            '${tpropietarios['telprop']} - ${tpropietarios['dirprop']}',
+            'Teléfono: ${tpropietarios['telprop']} - Dirección: ${tpropietarios['dirprop']}',
           ),
-          onTap: () {},
+          onTap: () {
+            Navigator.pop(context); // Cerrar el SearchAnchor
+            _showPropietarioDetails(tpropietarios, context);
+          },
         );
       }).toList();
     } catch (e) {
