@@ -286,6 +286,7 @@ class SQLHelper {
       tipoanimal TEXT NOT NULL DEFAULT 'adulto',
       nomvet TEXT,
       procedimiento TEXT,
+      medprev TEXT,
       condicionsalud TEXT,
       fecharev TEXT,
       observacionsalud TEXT,
@@ -374,6 +375,33 @@ class SQLHelper {
     }
   }
 
+  //Método para obtener los nombres de los corrales, sirve para que al agregar o editar un animal
+  // o becerro, en el dropdown de corrales se muestren los disponibles
+  static Future<List<String>> getNombresCorrales() async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.query(
+        'tcorral',
+        columns: ['nomcorral'],
+        where: "nomcorral IS NOT NULL AND nomcorral != ''",
+        orderBy: "nomcorral ASC",
+      );
+
+      List<String> nombres = [];
+      for (var corral in result) {
+        if (corral['nomcorral'] != null) {
+          nombres.add(corral['nomcorral'].toString());
+        }
+      }
+
+      print("Nombres de corrales obtenidos: ${nombres.length}");
+      return nombres;
+    } catch (e) {
+      print("Error obteniendo nombres de corrales: $e");
+      return [];
+    }
+  }
+
   // Este es el método para resetear la base de datos, este sirve para estar haciendo pruebas cuando cambias datos o así de q necesites
   // estar borrando la bdd y volver a crearla de 0, pero si ya no lo ocupas lo quitas en el main.dart
   // (es en la linea 57 mas o menos xD dice algo como await SQLHelper.resetDatabase(); , a ese nomás lo comentas y
@@ -427,6 +455,7 @@ class SQLHelper {
         'tipoanimal': data['tipoanimal'] ?? 'adulto',
         'nomvet': data['nomvet'] ?? '',
         'procedimiento': data['procedimiento'] ?? '',
+        'medprev': data['medprev'] ?? '',
         'condicionsalud': data['condicionsalud'] ?? '',
         'fecharev': data['fecharev'] ?? '',
         'observacionsalud': data['observacionsalud'] ?? '',
@@ -466,81 +495,6 @@ class SQLHelper {
     } catch (e) {
       print("Error obteniendo registros de salud: $e");
       return [];
-    }
-  }
-
-  // Obtener registros por arete del animal
-  static Future<List<Map<String, dynamic>>> getRegistrosSaludPorArete(
-    String areteanimal,
-  ) async {
-    final db = await SQLHelper.db();
-    try {
-      final result = await db.query(
-        'tsalud',
-        where: "areteanimal LIKE ?",
-        whereArgs: ['%$areteanimal%'],
-        orderBy: "fecharev DESC",
-      );
-      print(
-        "Registros de salud obtenidos: ${result.length} para arete $areteanimal",
-      );
-      return result;
-    } catch (e) {
-      print("Error obteniendo registros de salud: $e");
-      return [];
-    }
-  }
-
-  // Búsqueda general en registros de salud
-  static Future<List<Map<String, dynamic>>> searchRegistrosSalud(
-    String query,
-  ) async {
-    final db = await SQLHelper.db();
-    try {
-      final result = await db.query(
-        'tsalud',
-        where: "areteanimal LIKE ? OR nomvet LIKE ? OR procedimiento LIKE ?",
-        whereArgs: ['%$query%', '%$query%', '%$query%'],
-        orderBy: "fecharev DESC",
-      );
-      print("Búsqueda salud: ${result.length} resultados para '$query'");
-      return result;
-    } catch (e) {
-      print("Error buscando registros de salud: $e");
-      return [];
-    }
-  }
-
-  // Método update para registros de salud
-  static Future<int> updateRegistroSalud(
-    int idsalud,
-    Map<String, dynamic> data,
-  ) async {
-    final db = await SQLHelper.db();
-    try {
-      final result = await db.update(
-        'tsalud',
-        data,
-        where: "idsalud = ?",
-        whereArgs: [idsalud],
-      );
-      print("Registro de salud actualizado: $result filas afectadas");
-      return result;
-    } catch (e) {
-      print("Error actualizando registro de salud: $e");
-      rethrow;
-    }
-  }
-  // Método delete para registros de salud
-
-  static Future<void> deleteRegistroSalud(int idsalud) async {
-    final db = await SQLHelper.db();
-    try {
-      await db.delete("tsalud", where: "idsalud = ?", whereArgs: [idsalud]);
-      print("Registro de salud eliminado con ID: $idsalud");
-    } catch (e) {
-      print("Error eliminando registro de salud: $e");
-      rethrow;
     }
   }
 
@@ -983,8 +937,19 @@ class SQLHelper {
       final result = await db.query(
         'tbecerros',
         where:
-            "aretebece LIKE ? OR nombrebece LIKE ? OR sexobece LIKE ? OR observacionbece LIKE ?",
-        whereArgs: ['%$query%', '%$query%', '%$query%', '%$query%'],
+            "aretebece LIKE ? OR nombrebece LIKE ? OR pesobece LIKE ? OR sexobece LIKE ? OR razabece LIKE ? OR nacimientobece LIKE ? OR corralbece LIKE ? OR estatusbece LIKE ? OR aretemadre LIKE ? OR observacionbece LIKE ?",
+        whereArgs: [
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+          '%$query%',
+        ],
         orderBy: "idbece DESC",
       );
       print("Búsqueda becerros: ${result.length} resultados para '$query'");
@@ -1032,8 +997,9 @@ class SQLHelper {
       final result = await db.query(
         'tcorral',
         where:
-            "identcorral LIKE ? OR nomcorral LIKE ? OR ubicorral LIKE ? OR condicion LIKE ? OR observacioncorral LIKE ? OR capmax LIKE ? OR capactual LIKE ?",
+            "identcorral LIKE ? OR nomcorral LIKE ? OR ubicorral LIKE ? OR condicion LIKE ? OR observacioncorral LIKE ? OR capmax LIKE ? OR capactual LIKE ? OR fechamant LIKE ?",
         whereArgs: [
+          '%$query%',
           '%$query%',
           '%$query%',
           '%$query%',

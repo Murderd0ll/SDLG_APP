@@ -96,6 +96,20 @@ class ImageService {
   }
 }
 
+final List<String> opcionesMedicinaPreventiva = [
+  'Vacuna contra Brucelosis',
+  'Vacuna contra IBR',
+  'Vacuna contra BVD',
+  'Bacterina contra clostridiosis',
+  'Bacterina contra pasteurelosis',
+  'Baño garrapaticida',
+  'Control de moscas',
+  'Desparacitación interna',
+  'Desparacitación externa',
+  'Cortado de cuernos',
+  'Rebajado de pezuñas',
+];
+
 class PagAnimales extends StatelessWidget {
   final List<Map<String, dynamic>> data;
   final VoidCallback onRefresh;
@@ -150,7 +164,10 @@ class PagAnimales extends StatelessWidget {
                             ),
                           ];
                         }
-                        return _buildSearchSuggestions(controller.text);
+                        return _buildSearchSuggestions(
+                          controller.text,
+                          context,
+                        );
                       },
                 ),
               ),
@@ -472,7 +489,10 @@ class PagAnimales extends StatelessWidget {
     }
   }
 
-  Future<List<Widget>> _buildSearchSuggestions(String query) async {
+  Future<List<Widget>> _buildSearchSuggestions(
+    String query,
+    BuildContext context,
+  ) async {
     try {
       final resultados = await SQLHelper.searchAnimales(query);
 
@@ -492,8 +512,13 @@ class PagAnimales extends StatelessWidget {
             color: const Color.fromARGB(255, 137, 77, 77),
           ),
           title: Text(tganado['nombregdo'] ?? 'Sin nombre'),
-          subtitle: Text('${tganado['aretegdo']} - ${tganado['sexogdo']}'),
-          onTap: () {},
+          subtitle: Text(
+            'Arete: ${tganado['aretegdo']} - Sexo: ${tganado['sexogdo']}',
+          ),
+          onTap: () {
+            Navigator.pop(context); // Cerrar el SearchAnchor
+            _showAnimalDetails(tganado, context);
+          },
         );
       }).toList();
     } catch (e) {
@@ -984,6 +1009,7 @@ class PagAnimales extends StatelessWidget {
 
     File? selectedImage;
     String? imagePath;
+    List<String> medicinasSeleccionadas = [];
 
     showDialog(
       context: context,
@@ -1061,6 +1087,15 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
+                    _buildMedicinaPreventivaSection(medicinasSeleccionadas, (
+                      List<String> nuevasSelecciones,
+                    ) {
+                      setState(() {
+                        medicinasSeleccionadas = nuevasSelecciones;
+                      });
+                    }, dialogContext),
+                    SizedBox(height: 12),
+
                     TextField(
                       controller: fechaRevisionController,
                       decoration: InputDecoration(
@@ -1087,7 +1122,7 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    // Selector de imagen adaptado (NUEVO)
+                    // Selector de imagen para el registro de salud
                     _buildImageSelectorForHealth(
                       setState,
                       selectedImage,
@@ -1121,16 +1156,18 @@ class PagAnimales extends StatelessWidget {
                       return;
                     }
 
+                    String medicinasString = medicinasSeleccionadas.join(', ');
+
                     final nuevoRegistro = {
                       'areteanimal': animal['aretegdo'] ?? '',
                       'tipoanimal': 'adulto',
                       'nomvet': veterinarioController.text,
                       'procedimiento': procedimientoController.text,
                       'condicionsalud': condicionController.text,
+                      'medprev': medicinasString,
                       'fecharev': fechaRevisionController.text,
                       'observacionsalud': observacionesController.text,
-                      'archivo':
-                          imagePath ?? '', // Cambiado de filePath a imagePath
+                      'archivo': imagePath ?? '',
                     };
 
                     try {
@@ -1164,6 +1201,231 @@ class PagAnimales extends StatelessWidget {
     );
   }
 
+  Widget _buildMedicinaPreventivaSection(
+    List<String> seleccionadas,
+    Function(List<String>) onSeleccionChanged,
+    BuildContext context,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header de la sección
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Icon(Icons.medical_services, color: Colors.green, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Medicina Preventiva',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green[700],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Contenedor de checkboxes
+        Container(
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.green[300]!),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.green[50],
+          ),
+          child: Column(
+            children: [
+              // Botón para expandir/contraer
+              InkWell(
+                onTap: () {
+                  _mostrarDialogoMedicinasCompleto(
+                    context,
+                    seleccionadas,
+                    onSeleccionChanged,
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Seleccionar Medicinas Preventivas',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.green[700],
+                        ),
+                      ),
+                      Icon(Icons.arrow_drop_down, color: Colors.green),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 8),
+
+              // Mostrar selecciones actuales
+              if (seleccionadas.isNotEmpty) ...[
+                Text(
+                  'Seleccionadas:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                SizedBox(height: 4),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: seleccionadas.map((medicina) {
+                    return Chip(
+                      label: Text(medicina, style: TextStyle(fontSize: 10)),
+                      backgroundColor: Colors.green[100],
+                      deleteIcon: Icon(Icons.close, size: 14),
+                      onDeleted: () {
+                        List<String> nuevasSelecciones = List.from(
+                          seleccionadas,
+                        );
+                        nuevasSelecciones.remove(medicina);
+                        onSeleccionChanged(nuevasSelecciones);
+                      },
+                    );
+                  }).toList(),
+                ),
+              ] else ...[
+                Text(
+                  'No hay medicinas seleccionadas',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // NUEVO MÉTODO: Diálogo completo para selección de medicinas
+  void _mostrarDialogoMedicinasCompleto(
+    BuildContext context,
+    List<String> seleccionadas,
+    Function(List<String>) onSeleccionChanged,
+  ) {
+    List<String> seleccionesTemporales = List.from(seleccionadas);
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.medical_services, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Medicina Preventiva'),
+              ],
+            ),
+            content: Container(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Búsqueda
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Buscar medicina...',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      // Puedes implementar búsqueda aquí si lo deseas
+                    },
+                  ),
+                  SizedBox(height: 16),
+
+                  // Lista de checkboxes
+                  Container(
+                    height: 300,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: opcionesMedicinaPreventiva.length,
+                      itemBuilder: (context, index) {
+                        final medicina = opcionesMedicinaPreventiva[index];
+                        return CheckboxListTile(
+                          title: Text(medicina),
+                          value: seleccionesTemporales.contains(medicina),
+                          onChanged: (bool? value) {
+                            setDialogState(() {
+                              if (value == true) {
+                                seleccionesTemporales.add(medicina);
+                              } else {
+                                seleccionesTemporales.remove(medicina);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Contador de selecciones
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${seleccionesTemporales.length} medicinas seleccionadas',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  seleccionesTemporales.clear();
+                  setDialogState(() {});
+                },
+                child: Text('Limpiar', style: TextStyle(color: Colors.red)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  onSeleccionChanged(seleccionesTemporales);
+                  Navigator.pop(context);
+                },
+                child: Text('Aceptar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildImageSelectorForHealth(
     StateSetter setState,
     File? selectedImage,
@@ -1178,7 +1440,7 @@ class PagAnimales extends StatelessWidget {
           width: double.infinity,
           padding: EdgeInsets.only(bottom: 8),
           child: Text(
-            'Imagen del Procedimiento Médico',
+            'Imagen del Registro de Salud',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -1927,7 +2189,7 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
   Future<void> _loadRegistrosSalud() async {
     try {
       final registros = await SQLHelper.getRegistrosSaludPorAreteYTipo(
-        widget.animal['areteanimal'] ?? '',
+        widget.animal['aretegdo'] ?? '',
         'adulto',
       );
       setState(() {
@@ -1940,99 +2202,358 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
     }
   }
 
+  void _showImageDialog(String imagePath, String title) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: const Color.fromARGB(255, 137, 77, 77),
+                ),
+              ),
+            ),
+            FutureBuilder<bool>(
+              future: ImageService.imageExists(imagePath),
+              builder: (context, snapshot) {
+                if (snapshot.hasData == true && snapshot.data!) {
+                  return Container(
+                    width: 300,
+                    height: 300,
+                    child: Image.file(File(imagePath), fit: BoxFit.cover),
+                  );
+                } else {
+                  return Container(
+                    width: 300,
+                    height: 200,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error, size: 50, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text('Imagen no disponible'),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cerrar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: EdgeInsets.all(20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Column(
-        children: [
-          AppBar(
-            backgroundColor: const Color.fromARGB(255, 137, 77, 77),
-            title: Text(
-              'Historial del arete: ${widget.animal['aretegdo']}',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header con título y botón cerrar (igual que en AnimalDetailsDialog)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Historial de Salud - ${widget.animal['nombregdo']}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 137, 77, 77),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, size: 24),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+                ],
               ),
+
+              SizedBox(height: 20),
+
+              // Información del animal
+              _buildAnimalInfoSection(),
+
+              SizedBox(height: 20),
+
+              if (_isLoading)
+                Center(child: CircularProgressIndicator())
+              else if (_registrosSalud.isEmpty)
+                _buildEmptyState()
+              else
+                _buildRegistrosSection(),
             ],
           ),
-          Expanded(
-            child: _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : _registrosSalud.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.medical_services,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'No hay registros de salud',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Agrega el primer registro',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimalInfoSection() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 250, 245, 245),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Información del Animal',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: const Color.fromARGB(255, 137, 77, 77),
+              fontSize: 16,
+            ),
+          ),
+          SizedBox(height: 12),
+          _buildInfoRow(
+            'Nombre',
+            widget.animal['nombregdo'] ?? 'No especificado',
+          ),
+          _buildInfoRow(
+            'Arete',
+            widget.animal['aretegdo'] ?? 'No especificado',
+          ),
+          _buildInfoRow('Raza', widget.animal['razagdo'] ?? 'No especificado'),
+          _buildInfoRow(
+            'Estatus',
+            widget.animal['estatusgdo'] ?? 'No especificado',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 250, 245, 245),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.medical_services, size: 64, color: Colors.grey[400]),
+          SizedBox(height: 16),
+          Text(
+            'No hay registros de salud',
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Agrega el primer registro desde el menú de opciones',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegistrosSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Registros de Salud (${_registrosSalud.length})',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: const Color.fromARGB(255, 137, 77, 77),
+          ),
+        ),
+        SizedBox(height: 16),
+        ..._registrosSalud.asMap().entries.map((entry) {
+          final index = entry.key;
+          final registro = entry.value;
+          return _buildRegistroCard(registro, index);
+        }).toList(),
+      ],
+    );
+  }
+
+  Widget _buildRegistroCard(Map<String, dynamic> registro, int index) {
+    final hasImage =
+        registro['archivo'] != null &&
+        registro['archivo'].toString().isNotEmpty;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 250, 245, 245),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header del registro
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 137, 77, 77).withOpacity(0.1),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(10),
+                topRight: Radius.circular(10),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.medical_services,
+                  color: const Color.fromARGB(255, 137, 77, 77),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Registro ${index + 1} - ${registro['fecharev'] ?? 'Fecha no especificada'}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 137, 77, 77),
+                      fontSize: 16,
                     ),
-                  )
-                : ListView.builder(
-                    padding: EdgeInsets.all(16),
-                    itemCount: _registrosSalud.length,
-                    itemBuilder: (context, index) {
-                      final registro = _registrosSalud[index];
-                      return Card(
-                        margin: EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.medical_services,
-                            color: Colors.green,
-                          ),
-                          title: Text(
-                            registro['procedimiento'] ?? 'Sin procedimiento',
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Veterinario: ${registro['nomvet'] ?? 'No especificado'}',
-                              ),
-                              Text(
-                                'Fecha: ${registro['fecharev'] ?? 'No especificada'}',
-                              ),
-                              if (registro['condicion_salud'] != null)
-                                Text(
-                                  'Condición: ${registro['condicionsalud']}',
-                                ),
-                            ],
-                          ),
-                          trailing:
-                              registro['archivo_adjunto'] != null &&
-                                  registro['archivo_adjunto']
-                                      .toString()
-                                      .isNotEmpty
-                              ? Icon(Icons.attach_file, color: Colors.blue)
-                              : null,
-                          onTap: () {
-                            // Podrías mostrar más detalles aquí
-                          },
-                        ),
+                  ),
+                ),
+                if (hasImage)
+                  IconButton(
+                    icon: Icon(Icons.photo_library, color: Colors.blue),
+                    onPressed: () {
+                      _showImageDialog(
+                        registro['archivo'].toString(),
+                        registro['procedimiento'] ?? 'Imagen del procedimiento',
                       );
                     },
                   ),
+              ],
+            ),
+          ),
+
+          // Contenido del registro
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildRegistroInfoRow(
+                  'Procedimiento',
+                  registro['procedimiento'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
+                  'Veterinario',
+                  registro['nomvet'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
+                  'Condición de Salud',
+                  registro['condicionsalud'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
+                  'Fecha de Revisión',
+                  registro['fecharev'] ?? 'No especificada',
+                ),
+                if (registro['observacionsalud'] != null &&
+                    registro['observacionsalud'].toString().isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 8),
+                      Text(
+                        'Observaciones:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: const Color.fromARGB(255, 137, 77, 77),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        registro['observacionsalud'].toString(),
+                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: const Color.fromARGB(255, 137, 77, 77),
+              ),
+            ),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(value, style: TextStyle(color: Colors.grey[700])),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegistroInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: const Color.fromARGB(255, 137, 77, 77),
+              ),
+            ),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(value, style: TextStyle(color: Colors.grey[700])),
           ),
         ],
       ),

@@ -96,6 +96,20 @@ class ImageService {
   }
 }
 
+final List<String> opcionesMedicinaPreventiva = [
+  'Vacuna contra Brucelosis',
+  'Vacuna contra IBR',
+  'Vacuna contra BVD',
+  'Bacterina contra clostridiosis',
+  'Bacterina contra pasteurelosis',
+  'Baño garrapaticida',
+  'Control de moscas',
+  'Desparacitación interna',
+  'Desparacitación externa',
+  'Cortado de cuernos',
+  'Rebajado de pezuñas',
+];
+
 class PagAnimales extends StatelessWidget {
   final List<Map<String, dynamic>> data;
   final VoidCallback onRefresh;
@@ -522,21 +536,43 @@ class PagAnimales extends StatelessWidget {
     final nombreController = TextEditingController();
     final razaController = TextEditingController();
     final fechaNacimientoController = TextEditingController();
-    final corralController = TextEditingController();
     final alimentoController = TextEditingController();
     final observacionController = TextEditingController();
 
     String? produccion;
     String? estatusgdo;
     String? sexoSeleccionado;
+    String? corralSeleccionado;
     File? selectedImage;
     String? imagePath;
+
+    List<String> corralesDisponibles = [];
+    bool cargandoCorrales = true;
 
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
+            Future<void> _cargarCorrales() async {
+              try {
+                final corrales = await SQLHelper.getNombresCorrales();
+                setState(() {
+                  corralesDisponibles = corrales;
+                  cargandoCorrales = false;
+                });
+              } catch (e) {
+                print("Error cargando corrales: $e");
+                setState(() {
+                  cargandoCorrales = false;
+                });
+              }
+            }
+
+            if (cargandoCorrales) {
+              _cargarCorrales();
+            }
+
             return AlertDialog(
               title: Text("Agregar Animal"),
               content: SingleChildScrollView(
@@ -632,11 +668,55 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: corralController,
-                      decoration: InputDecoration(
-                        labelText: 'Corral',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: corralSeleccionado,
+                        decoration: InputDecoration(
+                          labelText: 'Corral',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          // Opción para "Sin corral"
+                          DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'Selecciona un corral',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                          // Opciones de corrales existentes
+                          ...corralesDisponibles.map((String corral) {
+                            return DropdownMenuItem(
+                              value: corral,
+                              child: Text(corral),
+                            );
+                          }).toList(),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            corralSeleccionado = newValue;
+                          });
+                        },
+                        hint: cargandoCorrales
+                            ? Row(
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Cargando corrales...'),
+                                ],
+                              )
+                            : Text('Selecciona un corral'),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -769,7 +849,7 @@ class PagAnimales extends StatelessWidget {
                       'sexogdo': sexoSeleccionado,
                       'razagdo': razaController.text,
                       'nacimientogdo': fechaNacimientoController.text,
-                      'corralgdo': corralController.text,
+                      'corralgdo': corralSeleccionado ?? '',
                       'alimentogdo': alimentoController.text,
                       'prodgdo': produccion,
                       'estatusgdo': estatusgdo,
@@ -989,12 +1069,13 @@ class PagAnimales extends StatelessWidget {
   ) {
     final veterinarioController = TextEditingController();
     final procedimientoController = TextEditingController();
-    final condicionController = TextEditingController();
     final fechaRevisionController = TextEditingController();
     final observacionesController = TextEditingController();
 
     File? selectedImage;
     String? imagePath;
+    String? condicionSalud;
+    List<String> medicinasSeleccionadas = [];
 
     showDialog(
       context: context,
@@ -1063,13 +1144,45 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: condicionController,
-                      decoration: InputDecoration(
-                        labelText: 'Condición de Salud',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: condicionSalud,
+                        decoration: InputDecoration(
+                          labelText: 'Condición de salud',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Buena',
+                            child: Text('Buena'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Regular',
+                            child: Text('Regular'),
+                          ),
+                          DropdownMenuItem(value: 'Mala', child: Text('Mala')),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            condicionSalud = newValue;
+                          });
+                        },
                       ),
                     ),
+                    SizedBox(height: 12),
+
+                    _buildMedicinaPreventivaSection(medicinasSeleccionadas, (
+                      List<String> nuevasSelecciones,
+                    ) {
+                      setState(() {
+                        medicinasSeleccionadas = nuevasSelecciones;
+                      });
+                    }, dialogContext),
                     SizedBox(height: 12),
 
                     TextField(
@@ -1132,12 +1245,15 @@ class PagAnimales extends StatelessWidget {
                       return;
                     }
 
+                    String medicinasString = medicinasSeleccionadas.join(', ');
+
                     final nuevoRegistro = {
                       'areteanimal': animal['aretegdo'] ?? '',
                       'tipoanimal': 'adulto',
                       'nomvet': veterinarioController.text,
                       'procedimiento': procedimientoController.text,
-                      'condicionsalud': condicionController.text,
+                      'condicionsalud': condicionSalud,
+                      'medprev': medicinasString,
                       'fecharev': fechaRevisionController.text,
                       'observacionsalud': observacionesController.text,
                       'archivo': imagePath ?? '',
@@ -1171,6 +1287,204 @@ class PagAnimales extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  Widget _buildMedicinaPreventivaSection(
+    List<String> seleccionadas,
+    Function(List<String>) onSeleccionChanged,
+    BuildContext context,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header de la sección
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Icon(Icons.medical_services, color: Colors.green, size: 20),
+              SizedBox(width: 8),
+              Text('Medicina Preventiva', style: TextStyle(fontSize: 16)),
+            ],
+          ),
+        ),
+
+        // Contenedor de checkboxes
+        Container(
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.green[300]!),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.green[50],
+          ),
+          child: Column(
+            children: [
+              // Botón para expandir/contraer
+              InkWell(
+                onTap: () {
+                  _mostrarDialogoMedicinasCompleto(
+                    context,
+                    seleccionadas,
+                    onSeleccionChanged,
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Med. Preventiva - Manejo',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.green[700],
+                        ),
+                      ),
+                      Icon(Icons.arrow_drop_down, color: Colors.green),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 8),
+
+              // Mostrar selecciones actuales
+              if (seleccionadas.isNotEmpty) ...[
+                Text(
+                  'Seleccionadas:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                SizedBox(height: 4),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: seleccionadas.map((medicina) {
+                    return Chip(
+                      label: Text(medicina, style: TextStyle(fontSize: 10)),
+                      backgroundColor: Colors.green[100],
+                      deleteIcon: Icon(Icons.close, size: 14),
+                      onDeleted: () {
+                        List<String> nuevasSelecciones = List.from(
+                          seleccionadas,
+                        );
+                        nuevasSelecciones.remove(medicina);
+                        onSeleccionChanged(nuevasSelecciones);
+                      },
+                    );
+                  }).toList(),
+                ),
+              ] else ...[
+                Text(
+                  'No hay opciones seleccionadas',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  //Diálogo completo para selección de medicinas
+  void _mostrarDialogoMedicinasCompleto(
+    BuildContext context,
+    List<String> seleccionadas,
+    Function(List<String>) onSeleccionChanged,
+  ) {
+    List<String> seleccionesTemporales = List.from(seleccionadas);
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.medical_services, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Medicina preventiva\ny Manejo'),
+              ],
+            ),
+            content: Container(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Lista de checkboxes
+                  Container(
+                    height: 300,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: opcionesMedicinaPreventiva.length,
+                      itemBuilder: (context, index) {
+                        final medicina = opcionesMedicinaPreventiva[index];
+                        return CheckboxListTile(
+                          title: Text(medicina),
+                          value: seleccionesTemporales.contains(medicina),
+                          onChanged: (bool? value) {
+                            setDialogState(() {
+                              if (value == true) {
+                                seleccionesTemporales.add(medicina);
+                              } else {
+                                seleccionesTemporales.remove(medicina);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Contador de selecciones
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${seleccionesTemporales.length} opciones seleccionadas',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  onSeleccionChanged(seleccionesTemporales);
+                  Navigator.pop(context);
+                },
+                child: Text('Aceptar'),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -1333,9 +1647,6 @@ class PagAnimales extends StatelessWidget {
     final fechaNacimientoController = TextEditingController(
       text: tganado['nacimientogdo']?.toString() ?? '',
     );
-    final corralController = TextEditingController(
-      text: tganado['corralgdo']?.toString() ?? '',
-    );
     final alimentoController = TextEditingController(
       text: tganado['alimentogdo']?.toString() ?? '',
     );
@@ -1348,9 +1659,13 @@ class PagAnimales extends StatelessWidget {
     );
     String? estatusgdo = tganado['estatusgdo']?.toString();
     String? sexoSeleccionado = tganado['sexogdo']?.toString();
+    String? corralSeleccionado = tganado['corralgdo']?.toString();
 
     File? selectedImage;
     String? imagePath = tganado['fotogdo']?.toString();
+
+    List<String> corralesDisponibles = [];
+    bool cargandoCorrales = true;
 
     // Cargar imagen existente si hay una
     if (imagePath != null && imagePath!.isNotEmpty) {
@@ -1365,6 +1680,24 @@ class PagAnimales extends StatelessWidget {
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
+            Future<void> _cargarCorrales() async {
+              try {
+                final corrales = await SQLHelper.getNombresCorrales();
+                setState(() {
+                  corralesDisponibles = corrales;
+                  cargandoCorrales = false;
+                });
+              } catch (e) {
+                print("Error cargando corrales: $e");
+                setState(() {
+                  cargandoCorrales = false;
+                });
+              }
+            }
+
+            if (cargandoCorrales) {
+              _cargarCorrales();
+            }
             return AlertDialog(
               title: Text("Editar Animal"),
               content: SingleChildScrollView(
@@ -1459,11 +1792,56 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: corralController,
-                      decoration: InputDecoration(
-                        labelText: 'Corral',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: _validarValorCorral(
+                          corralSeleccionado,
+                          corralesDisponibles,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Corral',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'Selecciona un corral',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                          ...corralesDisponibles.map((String corral) {
+                            return DropdownMenuItem(
+                              value: corral,
+                              child: Text(corral),
+                            );
+                          }).toList(),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            corralSeleccionado = newValue;
+                          });
+                        },
+                        hint: cargandoCorrales
+                            ? Row(
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Cargando corrales...'),
+                                ],
+                              )
+                            : Text('Selecciona un corral'),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -1557,7 +1935,7 @@ class PagAnimales extends StatelessWidget {
                       'sexogdo': sexoSeleccionado,
                       'razagdo': razaController.text,
                       'nacimientogdo': fechaNacimientoController.text,
-                      'corralgdo': corralController.text,
+                      'corralgdo': corralSeleccionado ?? '',
                       'alimentogdo': alimentoController.text,
                       'prodgdo': produccionController.text,
                       'estatusgdo': estatusgdo,
@@ -1596,6 +1974,29 @@ class PagAnimales extends StatelessWidget {
         );
       },
     );
+  }
+
+  String? _validarValorCorral(String? valor, List<String> corralesDisponibles) {
+    if (valor == null) return null;
+
+    // Verificar si el valor existe exactamente en la lista
+    if (corralesDisponibles.contains(valor)) {
+      return valor;
+    }
+
+    // Buscar coincidencias ignorando case sensitivity (mayus o minus xd)
+    final valorLower = valor.toLowerCase();
+    for (final corral in corralesDisponibles) {
+      if (corral.toLowerCase() == valorLower) {
+        return corral; // devuelve el valor correcto de la lista
+      }
+    }
+
+    // Si no se encuentra, retornar null para evitar el error y se trabe la app
+    print(
+      'Valor de corral no encontrado: "$valor". Corrales disponibles: $corralesDisponibles',
+    );
+    return null;
   }
 
   void _showDeleteConfirmation(
@@ -2215,16 +2616,20 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildRegistroInfoRow(
-                  'Procedimiento',
-                  registro['procedimiento'] ?? 'No especificado',
-                ),
-                _buildRegistroInfoRow(
                   'Veterinario',
                   registro['nomvet'] ?? 'No especificado',
                 ),
                 _buildRegistroInfoRow(
+                  'Procedimiento',
+                  registro['procedimiento'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
                   'Condición de Salud',
                   registro['condicionsalud'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
+                  'Med. Preventiva - Manejo',
+                  registro['medprev'] ?? 'No especificado',
                 ),
                 _buildRegistroInfoRow(
                   'Fecha de Revisión',
