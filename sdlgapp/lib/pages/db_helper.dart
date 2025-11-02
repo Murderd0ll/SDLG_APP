@@ -909,6 +909,82 @@ class SQLHelper {
     }
   }
 
+  // Método para contar animales por corral
+  static Future<int> contarAnimalesPorCorral(String nombreCorral) async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as total FROM tganado WHERE corralgdo = ?',
+        [nombreCorral],
+      );
+      return (result.first['total'] as int?) ?? 0;
+    } catch (e) {
+      print("Error contando animales por corral: $e");
+      return 0;
+    }
+  }
+
+  // Método para contar becerros por corral
+  static Future<int> contarBecerrosPorCorral(String nombreCorral) async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as total FROM tbecerros WHERE corralbece = ?',
+        [nombreCorral],
+      );
+      return (result.first['total'] as int?) ?? 0;
+    } catch (e) {
+      print("Error contando becerros por corral: $e");
+      return 0;
+    }
+  }
+
+  // Método para actualizar la capacidad actual de un corral
+  static Future<void> actualizarCapacidadActualCorral(
+    String nombreCorral,
+  ) async {
+    final db = await SQLHelper.db();
+    try {
+      // Contar animales y becerros en este corral
+      final totalAnimales = await contarAnimalesPorCorral(nombreCorral);
+      final totalBecerros = await contarBecerrosPorCorral(nombreCorral);
+      final capacidadActual = totalAnimales + totalBecerros;
+
+      // Actualizar el campo capactual en la tabla tcorral
+      await db.update(
+        'tcorral',
+        {'capactual': capacidadActual.toString()},
+        where: "nomcorral = ?",
+        whereArgs: [nombreCorral],
+      );
+
+      print(
+        "Cantidad actualizada para corral '$nombreCorral': $capacidadActual (Animales: $totalAnimales, Becerros: $totalBecerros)",
+      );
+    } catch (e) {
+      print("Error actualizando cantidad actual del corral: $e");
+    }
+  }
+
+  // Método para actualizar la capacidad actual de todos los corrales
+  static Future<void> actualizarCapacidadActualTodosCorrales() async {
+    final db = await SQLHelper.db();
+    try {
+      // Obtener todos los corrales
+      final corrales = await db.query('tcorral');
+
+      for (var corral in corrales) {
+        final nombreCorral = corral['nomcorral']?.toString();
+        if (nombreCorral != null && nombreCorral.isNotEmpty) {
+          await actualizarCapacidadActualCorral(nombreCorral);
+        }
+      }
+
+      print("✅ Capacidad actualizada para todos los corrales");
+    } catch (e) {
+      print("Error actualizando capacidad de todos los corrales: $e");
+    }
+  }
   // ************* Métodos de búsqueda *************
 
   //búsqueda general en animales

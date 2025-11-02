@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
 
-class PagCorrales extends StatelessWidget {
+class PagCorrales extends StatefulWidget {
   final List<Map<String, dynamic>> data;
   final VoidCallback onRefresh;
   final bool isLoading;
@@ -12,6 +12,49 @@ class PagCorrales extends StatelessWidget {
     required this.onRefresh,
     required this.isLoading,
   });
+
+  @override
+  State<PagCorrales> createState() => _PagCorralesState();
+}
+
+class _PagCorralesState extends State<PagCorrales> {
+  @override
+  void initState() {
+    super.initState();
+    // Actualizar cantidades al iniciar
+    _actualizarCapacidadesAlIniciar();
+  }
+
+  Future<void> _actualizarCapacidadesAlIniciar() async {
+    try {
+      await SQLHelper.actualizarCapacidadActualTodosCorrales();
+      widget.onRefresh(); // Refrescar la lista
+    } catch (e) {
+      print("Error actualizando capacidades al iniciar: $e");
+    }
+  }
+
+  // Método para forzar actualización de capacidades
+  Future<void> _forzarActualizacionCapacidades() async {
+    try {
+      await SQLHelper.actualizarCapacidadActualTodosCorrales();
+      widget.onRefresh();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Capacidades actualizadas correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error actualizando capacidades: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +102,21 @@ class PagCorrales extends StatelessWidget {
             SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 92, 77, 137).withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                onPressed: () => _forzarActualizacionCapacidades,
+                icon: Icon(
+                  Icons.refresh,
+                  color: const Color.fromARGB(255, 139, 128, 182),
+                ),
+                tooltip: 'Actualizar Capacidades',
+              ),
+            ),
+            SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
                 color: const Color.fromARGB(255, 137, 77, 77).withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
@@ -79,11 +137,11 @@ class PagCorrales extends StatelessWidget {
   }
 
   Widget _buildBody() {
-    if (isLoading) {
+    if (widget.isLoading) {
       return Center(child: CircularProgressIndicator());
     }
 
-    if (data.isEmpty) {
+    if (widget.data.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -106,15 +164,28 @@ class PagCorrales extends StatelessWidget {
 
     return ListView.builder(
       padding: EdgeInsets.all(16),
-      itemCount: data.length,
+      itemCount: widget.data.length,
       itemBuilder: (context, index) {
-        final tcorral = data[index];
+        final tcorral = widget.data[index];
         return _buildCorralCard(tcorral, context);
       },
     );
   }
 
   Widget _buildCorralCard(Map<String, dynamic> tcorral, BuildContext context) {
+    final capacidadMaxima =
+        int.tryParse(tcorral['capmax']?.toString() ?? '0') ?? 0;
+    final capacidadActual =
+        int.tryParse(tcorral['capactual']?.toString() ?? '0') ?? 0;
+    final porcentajeUso = capacidadMaxima > 0
+        ? (capacidadActual / capacidadMaxima) * 100
+        : 0;
+    Color colorEstado = Colors.green;
+    if (porcentajeUso >= 90) {
+      colorEstado = Colors.red;
+    } else if (porcentajeUso >= 70) {
+      colorEstado = Colors.orange;
+    }
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -148,8 +219,42 @@ class PagCorrales extends StatelessWidget {
             if (tcorral['capmax'] != null)
               Text('Capacidad: ${tcorral['capmax']}'),
 
-            if (tcorral['capactual'] != null)
-              Text('Capacidad Actual: ${tcorral['capactual']}'),
+            Row(
+              children: [
+                Text('Cantidad Actual: '),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: colorEstado.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: colorEstado),
+                  ),
+                  child: Text(
+                    '${tcorral['capactual'] ?? '0'} animales',
+                    style: TextStyle(
+                      color: colorEstado,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Barra de progreso visual
+            if (capacidadMaxima > 0) ...[
+              SizedBox(height: 4),
+              LinearProgressIndicator(
+                value: capacidadActual / capacidadMaxima,
+                backgroundColor: Colors.grey[300],
+                color: colorEstado,
+                minHeight: 6,
+              ),
+              SizedBox(height: 2),
+              Text(
+                '${porcentajeUso.toStringAsFixed(1)}% de uso',
+                style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+              ),
+            ],
 
             if (tcorral['fechamant'] != null)
               Text('Fecha de Mantenimiento: ${tcorral['fechamant']}'),
@@ -173,9 +278,21 @@ class PagCorrales extends StatelessWidget {
               _showEditCorralDialog(context, tcorral);
             } else if (value == 'delete') {
               _showDeleteConfirmation(context, tcorral);
+            } else if (value == 'refresh_capacity') {
+              _actualizarCapacidadCorralIndividual(tcorral);
             }
           },
           itemBuilder: (BuildContext context) => [
+            PopupMenuItem<String>(
+              value: 'refresh_capacity',
+              child: Row(
+                children: [
+                  Icon(Icons.refresh, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text('Actualizar Capacidad'),
+                ],
+              ),
+            ),
             PopupMenuItem<String>(
               value: 'edit',
               child: Row(
@@ -200,6 +317,33 @@ class PagCorrales extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Método para actualizar capacidad de un corral individual
+  Future<void> _actualizarCapacidadCorralIndividual(
+    Map<String, dynamic> corral,
+  ) async {
+    final nombreCorral = corral['nomcorral']?.toString();
+    if (nombreCorral == null) return;
+
+    try {
+      await SQLHelper.actualizarCapacidadActualCorral(nombreCorral);
+      widget.onRefresh(); // Refrescar la lista
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Capacidad de $nombreCorral actualizada'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error actualizando capacidad: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _selectDate(
@@ -276,7 +420,7 @@ class PagCorrales extends StatelessWidget {
     final identcorralController = TextEditingController();
     final ubicorralController = TextEditingController();
     final capmaxController = TextEditingController();
-    final capactualController = TextEditingController();
+    final capactualController = TextEditingController(text: '0');
     final fechamantController = TextEditingController();
     final observacioncorralController = TextEditingController();
 
@@ -334,6 +478,18 @@ class PagCorrales extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Capacidad actual',
                         border: OutlineInputBorder(),
+                        enabled:
+                            false, // Deshabilitado porque se calculará automáticamente
+                      ),
+                      readOnly: true, // Solo lectura
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'La capacidad actual se calculará automáticamente',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
                     SizedBox(height: 12),
@@ -411,12 +567,22 @@ class PagCorrales extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () async {
+                    if (nomcorralController.text.isEmpty) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text('El nombre del corral es obligatorio'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
                     final nuevoCorral = {
                       'identcorral': identcorralController.text,
                       'nomcorral': nomcorralController.text,
                       'ubicorral': ubicorralController.text,
                       'capmax': capmaxController.text,
-                      'capactual': capactualController.text,
+                      'capactual': '0',
                       'fechamant': fechamantController.text,
                       'condicion': condicion,
                       'observacioncorral': observacioncorralController.text,
@@ -424,7 +590,10 @@ class PagCorrales extends StatelessWidget {
 
                     try {
                       await SQLHelper.createCorral(nuevoCorral);
-                      onRefresh();
+                      await SQLHelper.actualizarCapacidadActualCorral(
+                        nomcorralController.text,
+                      );
+                      widget.onRefresh();
                       Navigator.pop(context);
 
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -535,6 +704,19 @@ class PagCorrales extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Capacidad Actual',
                         border: OutlineInputBorder(),
+                        enabled: false,
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                      ),
+                      readOnly: true,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'La capacidad actual se calcula automáticamente',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
                     SizedBox(height: 12),
@@ -617,7 +799,7 @@ class PagCorrales extends StatelessWidget {
                       'identcorral': identcorralController.text,
                       'ubicorral': ubicorralController.text,
                       'capmax': capmaxController.text,
-                      'capactual': capactualController.text,
+                      'capactual': tcorral['capactual'].toString() ?? '0',
                       'fechamant': fechamantController.text,
                       'condicion': condicion,
                       'observacioncorral': observacioncorralController.text,
@@ -628,7 +810,10 @@ class PagCorrales extends StatelessWidget {
                         tcorral['idcorral'],
                         corralActualizado,
                       );
-                      onRefresh();
+                      await SQLHelper.actualizarCapacidadActualCorral(
+                        nomcorralController.text,
+                      );
+                      widget.onRefresh();
                       Navigator.pop(context);
 
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -677,7 +862,7 @@ class PagCorrales extends StatelessWidget {
               onPressed: () async {
                 try {
                   await SQLHelper.deleteCorral(tcorral['idcorral']);
-                  onRefresh();
+                  widget.onRefresh();
                   Navigator.pop(context);
 
                   ScaffoldMessenger.of(context).showSnackBar(
