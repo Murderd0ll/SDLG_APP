@@ -431,6 +431,36 @@ class PagAnimales extends StatelessWidget {
     String? cargada;
     String? tecnica;
 
+    void _calcularFechas(String fechaServicio) {
+      if (fechaServicio.isEmpty) return;
+
+      try {
+        final fechaServicioDate = DateTime.parse(fechaServicio);
+
+        // Calcular fecha aproximada de parto (9 meses después)
+        final fechaParto = DateTime(
+          fechaServicioDate.year,
+          fechaServicioDate.month + 9,
+          fechaServicioDate.day,
+        );
+
+        // Calcular fecha de próximo servicio (3 meses después del parto = 12 meses después del servicio)
+        final fechaProximoServicio = DateTime(
+          fechaServicioDate.year,
+          fechaServicioDate.month + 12,
+          fechaServicioDate.day,
+        );
+
+        // Actualizar los controladores
+        fAproxPartoController.text =
+            "${fechaParto.year}-${fechaParto.month.toString().padLeft(2, '0')}-${fechaParto.day.toString().padLeft(2, '0')}";
+        fNuevoServicioController.text =
+            "${fechaProximoServicio.year}-${fechaProximoServicio.month.toString().padLeft(2, '0')}-${fechaProximoServicio.day.toString().padLeft(2, '0')}";
+      } catch (e) {
+        print('Error calculando fechas: $e');
+      }
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -560,12 +590,48 @@ class PagAnimales extends StatelessWidget {
                         border: OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(Icons.calendar_today),
-                          onPressed: () => _selectDate(
+                          onPressed: () => _selectDateForReproduction(
                             dialogContext,
                             fServicioActualController,
+                            (fechaSeleccionada) {
+                              _calcularFechas(fechaSeleccionada);
+                            },
                           ),
                         ),
                       ),
+                      onChanged: (value) {
+                        // Calcular automáticamente cuando se escribe manualmente
+                        if (value.length == 10) {
+                          // Formato YYYY-MM-DD
+                          _calcularFechas(value);
+                        }
+                      },
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: fAproxPartoController,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha Aproximada de Parto',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 222, 222, 224),
+                      ),
+                      readOnly:
+                          true, // Solo lectura porque se calcula d forma automatica
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: fNuevoServicioController,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha de Próximo Servicio',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 222, 222, 224),
+                      ),
+                      readOnly:
+                          true, // Solo lectura porque se calcula d forma automatica
                     ),
                     SizedBox(height: 12),
 
@@ -619,7 +685,7 @@ class PagAnimales extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            'Registro de salud agregado exitosamente',
+                            'Registro de reproducción agregado exitosamente',
                           ),
                           backgroundColor: Colors.green,
                         ),
@@ -641,6 +707,30 @@ class PagAnimales extends StatelessWidget {
         );
       },
     );
+  }
+
+  // este es especificamente para el de reproducción xddd
+  void _selectDateForReproduction(
+    BuildContext context,
+    TextEditingController controller,
+    Function(String)
+    onDateSelected, // Callback q pedia para la suma d meses y eso
+  ) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      final formattedDate =
+          "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      controller.text = formattedDate;
+
+      // se llama al callback para calcular las fechas automáticamente
+      onDateSelected(formattedDate);
+    }
   }
 
   Future<void> _selectDate(
