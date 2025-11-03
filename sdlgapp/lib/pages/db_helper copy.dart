@@ -1,11 +1,9 @@
-import 'package:path_provider/path_provider.dart';
+/*import 'package:path_provider/path_provider.dart';
 import 'package:sdlgapp/pages/PagAnimales.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 import 'package:path/path.dart' as path;
 import 'dart:io';
 import 'package:share_plus/share_plus.dart';
-import 'dart:typed_data';
-import 'dart:convert';
 
 class SQLHelper {
   static Future<void> debugDatabaseLocation() async {
@@ -211,6 +209,33 @@ class SQLHelper {
     }
   }
 
+  // este método es para ver lo de las imágenes de los animales y ver si existen o no
+  static Future<void> debugAnimalImages() async {
+    final db = await SQLHelper.db();
+    try {
+      final animales = await db.query('tganado');
+      print("=== DEBUG IMÁGENES ANIMALES ===");
+      for (var animal in animales) {
+        print("ID: ${animal['idgdo']}, Nombre: ${animal['nombregdo']}");
+        print("Ruta imagen: ${animal['fotogdo']}");
+
+        if (animal['fotogdo'] != null &&
+            animal['fotogdo'].toString().isNotEmpty) {
+          final exists = await ImageService.imageExists(
+            animal['fotogdo'].toString(),
+          );
+          print("Imagen existe: $exists");
+        } else {
+          print("Sin imagen");
+        }
+        print("---");
+      }
+      print("=================================");
+    } catch (e) {
+      print("Error en debugAnimalImages: $e");
+    }
+  }
+
   static Future<sql.Database> db() async {
     try {
       final databasePath = await sql.getDatabasesPath();
@@ -250,7 +275,7 @@ class SQLHelper {
         prodgdo TEXT,
         estatusgdo TEXT,
         observaciongdo TEXT,
-        fotogdo BLOB
+        fotogdo TEXT
       )""");
       print("Tabla 'tganado' creada/verificada");
 
@@ -265,7 +290,7 @@ class SQLHelper {
       condicionsalud TEXT,
       fecharev TEXT,
       observacionsalud TEXT,
-      archivo BLOB
+      archivo TEXT
     )""");
       print("Tabla 'tsalud' creada/verificada");
 
@@ -435,7 +460,7 @@ class SQLHelper {
         'condicionsalud': data['condicionsalud'] ?? '',
         'fecharev': data['fecharev'] ?? '',
         'observacionsalud': data['observacionsalud'] ?? '',
-        'archivo': _processImageData(data['archivo']),
+        'archivo': data['archivo'] ?? '',
       };
 
       final id = await db.insert(
@@ -530,7 +555,6 @@ class SQLHelper {
   //este es para crear un animal
   static Future<int> createAnimal(Map<String, dynamic> data) async {
     final db = await SQLHelper.db();
-
     try {
       final animalData = {
         'aretegdo': data['aretegdo'] ?? '',
@@ -543,7 +567,7 @@ class SQLHelper {
         'prodgdo': data['prodgdo'] ?? '',
         'estatusgdo': data['estatusgdo'] ?? '',
         'observaciongdo': data['observaciongdo'] ?? '',
-        'fotogdo': _processImageData(data['fotogdo']),
+        'fotogdo': data['fotogdo'] ?? '',
       };
 
       final idgdo = await db.insert(
@@ -619,12 +643,6 @@ class SQLHelper {
         data.entries.where((entry) => camposValidos.contains(entry.key)),
       );
 
-      if (datosFiltrados.containsKey('fotogdo')) {
-        datosFiltrados['fotogdo'] = _processImageData(
-          datosFiltrados['fotogdo'],
-        );
-      }
-
       print("Datos filtrados: $datosFiltrados");
 
       final result = await db.update(
@@ -671,7 +689,7 @@ class SQLHelper {
         'estatusbece': data['estatusbece'] ?? '',
         'aretemadre': data['aretemadre'] ?? '',
         'observacionbece': data['observacionbece'] ?? '',
-        'fotobece': _processImageData(data['fotobece']),
+        'fotobece': data['fotobece'] ?? '',
       };
 
       final idbece = await db.insert(
@@ -725,10 +743,6 @@ class SQLHelper {
   ) async {
     final db = await SQLHelper.db();
     try {
-      if (data.containsKey('fotobece')) {
-        data['fotobece'] = _processImageData(data['fotobece']);
-      }
-
       final result = await db.update(
         'tbecerros',
         data,
@@ -770,7 +784,7 @@ class SQLHelper {
         'psgprop': data['psgprop'] ?? '',
         'uppprop': data['uppprop'] ?? '',
         'observacionprop': data['observacionprop'] ?? '',
-        'fotoprop': _processImageData(data['fotoprop']),
+        'fotoprop': data['fotoprop'] ?? '',
       };
 
       final idprop = await db.insert(
@@ -824,10 +838,6 @@ class SQLHelper {
   ) async {
     final db = await SQLHelper.db();
     try {
-      if (data.containsKey('fotoprop')) {
-        data['fotoprop'] = _processImageData(data['fotoprop']);
-      }
-
       final result = await db.update(
         'tpropietarios',
         data,
@@ -1136,34 +1146,6 @@ class SQLHelper {
     }
   }
 
-  // =========== FUNCIÓN AUXILIAR PARA PROCESAR IMÁGENES ===========
-
-  // Función que convierte Uint8List a base64 o mantiene base64 existente
-  static String? _processImageData(dynamic imageData) {
-    if (imageData == null) {
-      return null;
-    }
-
-    // Si ya es string (base64), retornarlo directamente
-    if (imageData is String) {
-      // Verificar si ya es base64 válido
-      if (imageData.startsWith('data:image') ||
-          (imageData.length > 100 && !imageData.contains('/'))) {
-        return imageData;
-      }
-      // Si es una ruta de archivo antigua, retornar null para eliminarla
-      return null;
-    }
-
-    // Si es Uint8List, convertir a base64
-    if (imageData is Uint8List) {
-      return base64Encode(imageData);
-    }
-
-    // Para cualquier otro tipo, intentar convertirlo a string
-    return imageData.toString();
-  }
-
   // ************* Métodos de estadísticas/informes ************* ESTE ES para las estadisticas del inicio xd
 
   //este es para obtener el total de animales en la tabla de tganado
@@ -1294,3 +1276,4 @@ class SQLHelper {
     }
   }
 }
+*/

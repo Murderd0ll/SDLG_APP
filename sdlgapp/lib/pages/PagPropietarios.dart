@@ -1,95 +1,91 @@
-// ignore_for_file: unused_local_variable
-
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
 
 class ImageService {
   static final ImagePicker _picker = ImagePicker();
-  // Tomar foto con cámara
 
-  static Future<File?> takePhoto() async {
+  // Tomar foto con cámara y convertir a bytes
+  static Future<Uint8List?> takePhoto() async {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 70,
         maxWidth: 800,
       );
-      return image != null ? File(image.path) : null;
+      return image != null ? await image.readAsBytes() : null;
     } catch (e) {
       print("Error tomando foto: $e");
       return null;
     }
   }
 
-  // Seleccionar de galería
-  static Future<File?> pickPhoto() async {
+  // Seleccionar de galería y convertir a bytes
+  static Future<Uint8List?> pickPhoto() async {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 70,
         maxWidth: 800,
       );
-      return image != null ? File(image.path) : null;
+      return image != null ? await image.readAsBytes() : null;
     } catch (e) {
       print("Error seleccionando foto: $e");
       return null;
     }
   }
 
-  // Guardar imagen en directorio de la app
-  static Future<String?> saveImageToAppDirectory(File imageFile) async {
+  // Convertir base64 string de vuelta a bytes para mostrar imagen
+  static Uint8List? base64ToBytes(String? base64String) {
+    if (base64String == null || base64String.isEmpty) return null;
     try {
-      // Obtener directorio de documentos
-      final Directory appDir = await getApplicationDocumentsDirectory();
-      final String imagesDirPath = '${appDir.path}/propietario_images';
-
-      // Crear directorio si no existe
-      final Directory imagesDir = Directory(imagesDirPath);
-      if (!await imagesDir.exists()) {
-        await imagesDir.create(recursive: true);
+      // Si el string contiene "data:image", extraer solo la parte base64
+      if (base64String.contains(',')) {
+        base64String = base64String.split(',').last;
       }
-
-      // Generar nombre único para la imagen
-      final String fileName =
-          'propietario_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1000)}.jpg';
-      final String newPath = '${imagesDir.path}/$fileName';
-
-      final File newImage = await imageFile.copy(newPath);
-
-      print("Imagen guardada en: $newPath");
-      return newPath;
+      return base64Decode(base64String);
     } catch (e) {
-      print("Error guardando imagen: $e");
+      print("Error decodificando base64: $e");
       return null;
     }
   }
 
-  // Eliminar imagen
-  static Future<bool> deleteImage(String imagePath) async {
-    try {
-      final File imageFile = File(imagePath);
-      if (await imageFile.exists()) {
-        await imageFile.delete();
-        print("Imagen eliminada: $imagePath");
-        return true;
-      }
-      return false;
-    } catch (e) {
-      print("Error eliminando imagen: $e");
-      return false;
+  // Crear Image widget desde base64 string
+  static Widget base64ToImage(String? base64String) {
+    final bytes = base64ToBytes(base64String);
+    if (bytes != null) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildPlaceholderIcon();
+        },
+      );
+    } else {
+      return _buildPlaceholderIcon();
     }
   }
 
-  // Verificar si una imagen existe
-  static Future<bool> imageExists(String? imagePath) async {
-    if (imagePath == null || imagePath.isEmpty) return false;
+  // Crear MemoryImage para CircleAvatar
+  static MemoryImage? base64ToMemoryImage(String? base64String) {
+    final bytes = base64ToBytes(base64String);
+    return bytes != null ? MemoryImage(bytes) : null;
+  }
+
+  static Widget _buildPlaceholderIcon() {
+    return Icon(Icons.photo_camera, size: 50, color: Colors.grey[400]);
+  }
+
+  // Verificar si una imagen en base64 es válida
+  static bool isBase64ImageValid(String? base64String) {
+    if (base64String == null || base64String.isEmpty) return false;
     try {
-      final File imageFile = File(imagePath);
-      return await imageFile.exists();
+      base64ToBytes(base64String);
+      return true;
     } catch (e) {
       return false;
     }
@@ -226,39 +222,13 @@ class PagPropietarios extends StatelessWidget {
     Map<String, dynamic> tpropietarios,
     BuildContext context,
   ) {
-    final imagePath = tpropietarios['fotoprop']?.toString();
+    final imageBase64 = tpropietarios['fotoprop']?.toString();
 
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       elevation: 2,
       child: ListTile(
-        leading: FutureBuilder<bool>(
-          future: ImageService.imageExists(imagePath),
-          builder: (context, snapshot) {
-            if (snapshot.hasData && snapshot.data! && imagePath != null) {
-              return CircleAvatar(
-                radius: 25,
-                backgroundImage: FileImage(File(imagePath)),
-                onBackgroundImageError: (exception, stackTrace) {
-                  print("Error cargando imagen: $exception");
-                },
-              );
-            } else {
-              return CircleAvatar(
-                backgroundColor: const Color.fromARGB(
-                  255,
-                  182,
-                  128,
-                  128,
-                ).withOpacity(0.2),
-                child: Icon(
-                  Icons.person,
-                  color: const Color.fromARGB(255, 137, 77, 77),
-                ),
-              );
-            }
-          },
-        ),
+        leading: _buildPropietarioAvatar(imageBase64),
         title: Text(
           tpropietarios['nombreprop'] ?? 'Sin Nombre',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -281,10 +251,10 @@ class PagPropietarios extends StatelessWidget {
               Text('RFC: ${tpropietarios['rfcprop']}'),
 
             if (tpropietarios['psgprop'] != null)
-              Text('RFC: ${tpropietarios['psgprop']}'),
+              Text('PSG: ${tpropietarios['psgprop']}'),
 
             if (tpropietarios['uppprop'] != null)
-              Text('RFC: ${tpropietarios['uppprop']}'),
+              Text('UPP: ${tpropietarios['uppprop']}'),
 
             if (tpropietarios['observacionprop'] != null)
               Text('Observaciones: ${tpropietarios['observacionprop']}'),
@@ -296,10 +266,7 @@ class PagPropietarios extends StatelessWidget {
             ),
           ],
         ),
-        onTap: () => _showPropietarioDetails(
-          tpropietarios,
-          context,
-        ), //  Este es para mostrar el popup de los detalles
+        onTap: () => _showPropietarioDetails(tpropietarios, context),
         trailing: PopupMenuButton<String>(
           icon: Icon(Icons.more_vert),
           onSelected: (value) {
@@ -311,7 +278,7 @@ class PagPropietarios extends StatelessWidget {
           },
           itemBuilder: (BuildContext context) => [
             PopupMenuItem<String>(
-              value: 'edit', //editar
+              value: 'edit',
               child: Row(
                 children: [
                   Icon(Icons.edit, color: Colors.blue),
@@ -321,7 +288,7 @@ class PagPropietarios extends StatelessWidget {
               ),
             ),
             PopupMenuItem<String>(
-              value: 'delete', //eliminar
+              value: 'delete',
               child: Row(
                 children: [
                   Icon(Icons.delete, color: Colors.red),
@@ -333,6 +300,40 @@ class PagPropietarios extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPropietarioAvatar(String? imageBase64) {
+    if (imageBase64 != null &&
+        imageBase64.isNotEmpty &&
+        ImageService.isBase64ImageValid(imageBase64)) {
+      try {
+        final memoryImage = ImageService.base64ToMemoryImage(imageBase64);
+        if (memoryImage != null) {
+          return CircleAvatar(
+            radius: 25,
+            backgroundImage: memoryImage,
+            onBackgroundImageError: (exception, stackTrace) {
+              print("Error cargando imagen: $exception");
+            },
+          );
+        }
+      } catch (e) {
+        print("Error decodificando imagen: $e");
+      }
+    }
+    return _buildDefaultAvatar();
+  }
+
+  Widget _buildDefaultAvatar() {
+    return CircleAvatar(
+      backgroundColor: const Color.fromARGB(
+        255,
+        182,
+        128,
+        128,
+      ).withOpacity(0.2),
+      child: Icon(Icons.person, color: const Color.fromARGB(255, 137, 77, 77)),
     );
   }
 
@@ -388,8 +389,7 @@ class PagPropietarios extends StatelessWidget {
     final uppController = TextEditingController();
     final observacionController = TextEditingController();
 
-    File? selectedImage;
-    String? imagePath;
+    Uint8List? selectedImageBytes;
 
     showDialog(
       context: context,
@@ -403,12 +403,10 @@ class PagPropietarios extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Selector de imagen
-                    _buildImageSelector(setState, selectedImage, imagePath, (
-                      File? newImage,
-                      String? newPath,
+                    _buildImageSelectorBytes(setState, selectedImageBytes, (
+                      Uint8List? newImageBytes,
                     ) {
-                      selectedImage = newImage;
-                      imagePath = newPath;
+                      selectedImageBytes = newImageBytes;
                     }, dialogContext),
                     SizedBox(height: 16),
 
@@ -512,7 +510,7 @@ class PagPropietarios extends StatelessWidget {
                       'psgprop': psgController.text,
                       'uppprop': uppController.text,
                       'observacionprop': observacionController.text,
-                      'fotoprop': imagePath ?? '',
+                      'fotoprop': selectedImageBytes,
                     };
 
                     try {
@@ -545,11 +543,10 @@ class PagPropietarios extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSelector(
+  Widget _buildImageSelectorBytes(
     StateSetter setState,
-    File? selectedImage,
-    String? imagePath,
-    Function(File?, String?) onImageChanged,
+    Uint8List? selectedImageBytes,
+    Function(Uint8List?) onImageChanged,
     BuildContext dialogContext,
   ) {
     return Column(
@@ -576,27 +573,18 @@ class PagPropietarios extends StatelessWidget {
             border: Border.all(color: Colors.grey),
             color: Colors.grey[100],
           ),
-          child: FutureBuilder<bool>(
-            future: selectedImage != null
-                ? ImageService.imageExists(imagePath)
-                : Future.value(false),
-            builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.data! && selectedImage != null) {
-                return ClipRRect(
+          child: selectedImageBytes != null
+              ? ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.file(
-                    selectedImage,
+                  child: Image.memory(
+                    selectedImageBytes,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return _buildPlaceholderIcon();
                     },
                   ),
-                );
-              } else {
-                return _buildPlaceholderIcon();
-              }
-            },
-          ),
+                )
+              : _buildPlaceholderIcon(),
         ),
 
         SizedBox(height: 10),
@@ -607,29 +595,17 @@ class PagPropietarios extends StatelessWidget {
           children: [
             ElevatedButton.icon(
               onPressed: () async {
-                final image = await ImageService.takePhoto();
-                if (image != null) {
-                  final savedPath = await ImageService.saveImageToAppDirectory(
-                    image,
+                final imageBytes = await ImageService.takePhoto();
+                if (imageBytes != null) {
+                  setState(() {
+                    onImageChanged(imageBytes);
+                  });
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Imagen tomada correctamente'),
+                      backgroundColor: Colors.green,
+                    ),
                   );
-                  if (savedPath != null) {
-                    setState(() {
-                      onImageChanged(image, savedPath);
-                    });
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Imagen tomada correctamente'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Error al guardar la imagen'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
                 }
               },
               icon: Icon(Icons.camera_alt),
@@ -637,29 +613,17 @@ class PagPropietarios extends StatelessWidget {
             ),
             ElevatedButton.icon(
               onPressed: () async {
-                final image = await ImageService.pickPhoto();
-                if (image != null) {
-                  final savedPath = await ImageService.saveImageToAppDirectory(
-                    image,
+                final imageBytes = await ImageService.pickPhoto();
+                if (imageBytes != null) {
+                  setState(() {
+                    onImageChanged(imageBytes);
+                  });
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Imagen seleccionada correctamente'),
+                      backgroundColor: Colors.green,
+                    ),
                   );
-                  if (savedPath != null) {
-                    setState(() {
-                      onImageChanged(image, savedPath);
-                    });
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Imagen seleccionada correctamente'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Error al guardar la imagen'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
                 }
               },
               icon: Icon(Icons.photo_library),
@@ -669,15 +633,11 @@ class PagPropietarios extends StatelessWidget {
         ),
 
         // Botón para quitar foto
-        if (selectedImage != null)
+        if (selectedImageBytes != null)
           TextButton(
-            onPressed: () async {
-              // Eliminar archivo físico si existe
-              if (imagePath != null) {
-                await ImageService.deleteImage(imagePath);
-              }
+            onPressed: () {
               setState(() {
-                onImageChanged(null, null);
+                onImageChanged(null);
               });
             },
             child: Text('Quitar foto', style: TextStyle(color: Colors.red)),
@@ -726,15 +686,12 @@ class PagPropietarios extends StatelessWidget {
       text: tpropietarios['observacionprop']?.toString() ?? '',
     );
 
-    File? selectedImage;
-    String? imagePath = tpropietarios['fotoprop']?.toString();
+    Uint8List? selectedImageBytes;
+    String? existingImageBase64 = tpropietarios['fotoprop']?.toString();
 
     // Cargar imagen existente si hay una
-    if (imagePath != null && imagePath!.isNotEmpty) {
-      final file = File(imagePath!);
-      if (file.existsSync()) {
-        selectedImage = file;
-      }
+    if (existingImageBase64 != null && existingImageBase64.isNotEmpty) {
+      selectedImageBytes = ImageService.base64ToBytes(existingImageBase64);
     }
 
     showDialog(
@@ -748,12 +705,10 @@ class PagPropietarios extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildImageSelector(setState, selectedImage, imagePath, (
-                      File? newImage,
-                      String? newPath,
+                    _buildImageSelectorBytes(setState, selectedImageBytes, (
+                      Uint8List? newImageBytes,
                     ) {
-                      selectedImage = newImage;
-                      imagePath = newPath;
+                      selectedImageBytes = newImageBytes;
                     }, dialogContext),
                     SizedBox(height: 16),
 
@@ -857,7 +812,7 @@ class PagPropietarios extends StatelessWidget {
                       'psgprop': psgController.text,
                       'uppprop': uppController.text,
                       'observacionprop': observacionController.text,
-                      'fotoprop': imagePath ?? '',
+                      'fotoprop': selectedImageBytes,
                     };
 
                     try {
@@ -915,12 +870,6 @@ class PagPropietarios extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 try {
-                  // Eliminar imagen si existe
-                  final imagePath = tpropietarios['fotoprop']?.toString();
-                  if (imagePath != null && imagePath.isNotEmpty) {
-                    await ImageService.deleteImage(imagePath);
-                  }
-
                   await SQLHelper.deletePropietario(tpropietarios['idprop']);
                   onRefresh();
                   Navigator.pop(context);
@@ -1018,15 +967,13 @@ class PropietarioDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildPhotoSection(String? imagePath) {
+  Widget _buildPhotoSection(String? imageBase64) {
     return Center(
-      child: FutureBuilder<bool>(
-        future: ImageService.imageExists(imagePath),
-        builder: (context, snapshot) {
-          final bool imageExists = snapshot.data ?? false;
-
-          if (imageExists && imagePath != null) {
-            return Container(
+      child:
+          imageBase64 != null &&
+              imageBase64.isNotEmpty &&
+              ImageService.isBase64ImageValid(imageBase64)
+          ? Container(
               width: 200,
               height: 200,
               decoration: BoxDecoration(
@@ -1041,20 +988,10 @@ class PropietarioDetailsDialog extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
-                child: Image.file(
-                  File(imagePath),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return _buildPlaceholderPhoto();
-                  },
-                ),
+                child: ImageService.base64ToImage(imageBase64),
               ),
-            );
-          } else {
-            return _buildPlaceholderPhoto();
-          }
-        },
-      ),
+            )
+          : _buildPlaceholderPhoto(),
     );
   }
 

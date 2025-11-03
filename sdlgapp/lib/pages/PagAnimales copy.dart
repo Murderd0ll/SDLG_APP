@@ -372,7 +372,7 @@ class PagAnimales extends StatelessWidget {
 
   void _showReproductionOptions(
     BuildContext context,
-    Map<String, dynamic> treprod,
+    Map<String, dynamic> animal,
   ) {
     showModalBottomSheet(
       context: context,
@@ -382,7 +382,7 @@ class PagAnimales extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Reproducción - ${treprod['areteanimal']}',
+              'Reproducción - ${animal['areteanimal']}',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -395,7 +395,7 @@ class PagAnimales extends StatelessWidget {
               title: Text('Registrar'),
               onTap: () {
                 Navigator.pop(context);
-                _showAddPregnancyDialog(context, treprod);
+                _showAddPregnancyDialog(context, animal);
               },
             ),
             ListTile(
@@ -403,7 +403,7 @@ class PagAnimales extends StatelessWidget {
               title: Text('Ver Historial Reproductivo'),
               onTap: () {
                 Navigator.pop(context);
-                _showReproductionHistory(context, treprod);
+                _showReproductionHistory(context, animal);
               },
             ),
             SizedBox(height: 10),
@@ -422,42 +422,315 @@ class PagAnimales extends StatelessWidget {
     BuildContext context,
     Map<String, dynamic> animal,
   ) {
-    // Aquí implementarás el diálogo para registrar preñez
+    final cantpartosController = TextEditingController();
+    final fServicioActualController = TextEditingController();
+    final fNuevoServicioController = TextEditingController();
+    final fAproxPartoController = TextEditingController();
+    final observacionController = TextEditingController();
+
+    String? cargada;
+    String? tecnica;
+
+    void _calcularFechas(String fechaServicio) {
+      if (fechaServicio.isEmpty) return;
+
+      try {
+        final fechaServicioDate = DateTime.parse(fechaServicio);
+
+        // Calcular fecha aproximada de parto (9 meses después)
+        final fechaParto = DateTime(
+          fechaServicioDate.year,
+          fechaServicioDate.month + 9,
+          fechaServicioDate.day,
+        );
+
+        // Calcular fecha de próximo servicio (3 meses después del parto = 12 meses después del servicio)
+        final fechaProximoServicio = DateTime(
+          fechaServicioDate.year,
+          fechaServicioDate.month + 12,
+          fechaServicioDate.day,
+        );
+
+        // Actualizar los controladores
+        fAproxPartoController.text =
+            "${fechaParto.year}-${fechaParto.month.toString().padLeft(2, '0')}-${fechaParto.day.toString().padLeft(2, '0')}";
+        fNuevoServicioController.text =
+            "${fechaProximoServicio.year}-${fechaProximoServicio.month.toString().padLeft(2, '0')}-${fechaProximoServicio.day.toString().padLeft(2, '0')}";
+      } catch (e) {
+        print('Error calculando fechas: $e');
+      }
+    }
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Registrar Preñez"),
-        content: Text(
-          "Funcionalidad de registro de preñez para ${animal['nombregdo']}",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cerrar'),
-          ),
-        ],
-      ),
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Agregar Registro de Reproducción"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Información del animal
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Row(
+                        children: [
+                          FaIcon(
+                            FontAwesomeIcons.cow,
+                            color: const Color.fromARGB(255, 137, 77, 77),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  animal['nombregdo'] ?? 'Sin nombre',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  'Arete: ${animal['aretegdo'] ?? 'N/A'}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16),
+
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: cargada,
+                        decoration: InputDecoration(
+                          labelText: 'Se encuentra cargada?',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(value: 'Si', child: Text('Si')),
+                          DropdownMenuItem(value: 'No', child: Text('No')),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            cargada = newValue;
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: tecnica,
+                        decoration: InputDecoration(
+                          labelText: 'Tecnica de Preñez',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Monta natural',
+                            child: Text('Monta natural'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Inseminación artificial',
+                            child: Text('Inseminación artificial'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Inseminación a tiempo fijo',
+                            child: Text('Inseminación a tiempo fijo'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Transferencia de embriones',
+                            child: Text('Transferencia de embriones'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            tecnica = newValue;
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: cantpartosController,
+                      decoration: InputDecoration(
+                        labelText: 'Cantidad de Partos',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: fServicioActualController,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha de Servicio Actual',
+                        border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () => _selectDateForReproduction(
+                            dialogContext,
+                            fServicioActualController,
+                            (fechaSeleccionada) {
+                              _calcularFechas(fechaSeleccionada);
+                            },
+                          ),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        // Calcular automáticamente cuando se escribe manualmente
+                        if (value.length == 10) {
+                          // Formato YYYY-MM-DD
+                          _calcularFechas(value);
+                        }
+                      },
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: fAproxPartoController,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha Aproximada de Parto',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 222, 222, 224),
+                      ),
+                      readOnly:
+                          true, // Solo lectura porque se calcula d forma automatica
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: fNuevoServicioController,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha de Próximo Servicio',
+                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 222, 222, 224),
+                      ),
+                      readOnly:
+                          true, // Solo lectura porque se calcula d forma automatica
+                    ),
+                    SizedBox(height: 12),
+
+                    TextField(
+                      controller: observacionController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Observaciones',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (cargada == null ||
+                        fServicioActualController.text.isEmpty) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Estado de servicio y Fecha de Servicio Actual son obligatorios',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final nuevoRegistro = {
+                      'areteanimal': animal['aretegdo'] ?? '',
+                      'cargada': cargada ?? '',
+                      'cantpartos': cantpartosController.text,
+                      'fservicioactual': fServicioActualController.text,
+                      'faproxparto': fAproxPartoController.text,
+                      'fnuevoservicio': fNuevoServicioController.text,
+                      'tecnica': tecnica ?? '',
+                      'observacion': observacionController.text,
+                    };
+
+                    try {
+                      await SQLHelper.createRegistroReproduccion(nuevoRegistro);
+                      Navigator.pop(dialogContext);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Registro de reproducción agregado exitosamente',
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al agregar registro: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  child: Text('Guardar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
-  void _showReproductionHistory(
+  // este es especificamente para el de reproducción xddd
+  void _selectDateForReproduction(
     BuildContext context,
-    Map<String, dynamic> animal,
-  ) {
-    // Aquí implementarás el historial reproductivo
-    showDialog(
+    TextEditingController controller,
+    Function(String)
+    onDateSelected, // Callback q pedia para la suma d meses y eso
+  ) async {
+    final DateTime? picked = await showDatePicker(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Historial Reproductivo"),
-        content: Text("Historial reproductivo de ${animal['nombregdo']}"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cerrar'),
-          ),
-        ],
-      ),
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
     );
+
+    if (picked != null) {
+      final formattedDate =
+          "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      controller.text = formattedDate;
+
+      // se llama al callback para calcular las fechas automáticamente
+      onDateSelected(formattedDate);
+    }
   }
 
   Future<void> _selectDate(
@@ -2651,6 +2924,347 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
                       SizedBox(height: 4),
                       Text(
                         registro['observacionsalud'].toString(),
+                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: const Color.fromARGB(255, 137, 77, 77),
+              ),
+            ),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(value, style: TextStyle(color: Colors.grey[700])),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegistroInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: const Color.fromARGB(255, 137, 77, 77),
+              ),
+            ),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(value, style: TextStyle(color: Colors.grey[700])),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+//reproduccion
+void _showReproductionHistory(
+  BuildContext context,
+  Map<String, dynamic> animal,
+) {
+  showDialog(
+    context: context,
+    builder: (context) => ReproductionHistoryDialog(animal: animal),
+  );
+}
+
+// esta clase es para mostrar el historial d reproduccion
+class ReproductionHistoryDialog extends StatefulWidget {
+  final Map<String, dynamic> animal;
+
+  const ReproductionHistoryDialog({super.key, required this.animal});
+
+  @override
+  State<ReproductionHistoryDialog> createState() =>
+      _ReproductionHistoryDialogState();
+}
+
+class _ReproductionHistoryDialogState extends State<ReproductionHistoryDialog> {
+  List<Map<String, dynamic>> _registrosReproduccion = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRegistrosReproduccion();
+  }
+
+  Future<void> _loadRegistrosReproduccion() async {
+    try {
+      final registros = await SQLHelper.getRegistrosReproduccionPorArete(
+        widget.animal['aretegdo'] ?? '',
+      );
+      setState(() {
+        _registrosReproduccion = registros;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error cargando registros de reproducción: $e");
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: EdgeInsets.all(20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header con título y botón cerrar (igual que en AnimalDetailsDialog)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Historial de Reproducción\nde ${widget.animal['nombregdo']}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 137, 77, 77),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, size: 24),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 20),
+
+              // Información del animal
+              _buildAnimalInfoSection(),
+
+              SizedBox(height: 20),
+
+              if (_isLoading)
+                Center(child: CircularProgressIndicator())
+              else if (_registrosReproduccion.isEmpty)
+                _buildEmptyState()
+              else
+                _buildRegistrosSection(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimalInfoSection() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 250, 245, 245),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Información del Animal',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: const Color.fromARGB(255, 137, 77, 77),
+              fontSize: 16,
+            ),
+          ),
+          SizedBox(height: 12),
+          _buildInfoRow(
+            'Nombre',
+            widget.animal['nombregdo'] ?? 'No especificado',
+          ),
+          _buildInfoRow(
+            'Arete',
+            widget.animal['aretegdo'] ?? 'No especificado',
+          ),
+          _buildInfoRow('Raza', widget.animal['razagdo'] ?? 'No especificado'),
+          _buildInfoRow(
+            'Estatus',
+            widget.animal['estatusgdo'] ?? 'No especificado',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 250, 245, 245),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.medical_services, size: 64, color: Colors.grey[400]),
+          SizedBox(height: 16),
+          Text(
+            'No hay registros de reproducción',
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Agrega el primer registro desde el menú de opciones',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegistrosSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Registros de Reproducción (${_registrosReproduccion.length})',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: const Color.fromARGB(255, 137, 77, 77),
+          ),
+        ),
+        SizedBox(height: 16),
+        ..._registrosReproduccion.asMap().entries.map((entry) {
+          final index = entry.key;
+          final registro = entry.value;
+          return _buildRegistroCard(registro, index);
+        }).toList(),
+      ],
+    );
+  }
+
+  Widget _buildRegistroCard(Map<String, dynamic> registro, int index) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 250, 245, 245),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color.fromARGB(255, 232, 218, 218)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header del registro
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 137, 77, 77).withOpacity(0.1),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(10),
+                topRight: Radius.circular(10),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.medical_services,
+                  color: const Color.fromARGB(255, 137, 77, 77),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Registro ${index + 1} - ${registro['fservicioactual'] ?? 'Fecha no especificada'}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 137, 77, 77),
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Contenido del registro
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildRegistroInfoRow(
+                  'Cargada',
+                  registro['cargada'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
+                  'Cantidad de partos',
+                  registro['cantpartos'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
+                  'Fecha de servicio actual',
+                  registro['fservicioactual'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
+                  'Fecha aprox. de parto',
+                  registro['faproxparto'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
+                  'Fecha de proximo servicio',
+                  registro['fnuevoservicio'] ?? 'No especificada',
+                ),
+                if (registro['observacion'] != null &&
+                    registro['observacion'].toString().isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 8),
+                      Text(
+                        'Observaciones:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: const Color.fromARGB(255, 137, 77, 77),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        registro['observacion'].toString(),
                         style: TextStyle(color: Colors.grey[700], fontSize: 14),
                       ),
                     ],
