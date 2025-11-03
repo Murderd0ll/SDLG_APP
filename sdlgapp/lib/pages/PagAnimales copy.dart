@@ -536,21 +536,43 @@ class PagAnimales extends StatelessWidget {
     final nombreController = TextEditingController();
     final razaController = TextEditingController();
     final fechaNacimientoController = TextEditingController();
-    final corralController = TextEditingController();
     final alimentoController = TextEditingController();
     final observacionController = TextEditingController();
 
     String? produccion;
     String? estatusgdo;
     String? sexoSeleccionado;
+    String? corralSeleccionado;
     File? selectedImage;
     String? imagePath;
+
+    List<String> corralesDisponibles = [];
+    bool cargandoCorrales = true;
 
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
+            Future<void> _cargarCorrales() async {
+              try {
+                final corrales = await SQLHelper.getNombresCorrales();
+                setState(() {
+                  corralesDisponibles = corrales;
+                  cargandoCorrales = false;
+                });
+              } catch (e) {
+                print("Error cargando corrales: $e");
+                setState(() {
+                  cargandoCorrales = false;
+                });
+              }
+            }
+
+            if (cargandoCorrales) {
+              _cargarCorrales();
+            }
+
             return AlertDialog(
               title: Text("Agregar Animal"),
               content: SingleChildScrollView(
@@ -646,11 +668,55 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: corralController,
-                      decoration: InputDecoration(
-                        labelText: 'Corral',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: corralSeleccionado,
+                        decoration: InputDecoration(
+                          labelText: 'Corral',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          // Opción para "Sin corral"
+                          DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'Selecciona un corral',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                          // Opciones de corrales existentes
+                          ...corralesDisponibles.map((String corral) {
+                            return DropdownMenuItem(
+                              value: corral,
+                              child: Text(corral),
+                            );
+                          }).toList(),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            corralSeleccionado = newValue;
+                          });
+                        },
+                        hint: cargandoCorrales
+                            ? Row(
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Cargando corrales...'),
+                                ],
+                              )
+                            : Text('Selecciona un corral'),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -783,7 +849,7 @@ class PagAnimales extends StatelessWidget {
                       'sexogdo': sexoSeleccionado,
                       'razagdo': razaController.text,
                       'nacimientogdo': fechaNacimientoController.text,
-                      'corralgdo': corralController.text,
+                      'corralgdo': corralSeleccionado ?? '',
                       'alimentogdo': alimentoController.text,
                       'prodgdo': produccion,
                       'estatusgdo': estatusgdo,
@@ -1003,12 +1069,12 @@ class PagAnimales extends StatelessWidget {
   ) {
     final veterinarioController = TextEditingController();
     final procedimientoController = TextEditingController();
-    final condicionController = TextEditingController();
     final fechaRevisionController = TextEditingController();
     final observacionesController = TextEditingController();
 
     File? selectedImage;
     String? imagePath;
+    String? condicionSalud;
     List<String> medicinasSeleccionadas = [];
 
     showDialog(
@@ -1078,11 +1144,34 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: condicionController,
-                      decoration: InputDecoration(
-                        labelText: 'Condición de Salud',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: condicionSalud,
+                        decoration: InputDecoration(
+                          labelText: 'Condición de salud',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Buena',
+                            child: Text('Buena'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Regular',
+                            child: Text('Regular'),
+                          ),
+                          DropdownMenuItem(value: 'Mala', child: Text('Mala')),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            condicionSalud = newValue;
+                          });
+                        },
                       ),
                     ),
                     SizedBox(height: 12),
@@ -1163,7 +1252,7 @@ class PagAnimales extends StatelessWidget {
                       'tipoanimal': 'adulto',
                       'nomvet': veterinarioController.text,
                       'procedimiento': procedimientoController.text,
-                      'condicionsalud': condicionController.text,
+                      'condicionsalud': condicionSalud,
                       'medprev': medicinasString,
                       'fecharev': fechaRevisionController.text,
                       'observacionsalud': observacionesController.text,
@@ -1217,14 +1306,7 @@ class PagAnimales extends StatelessWidget {
             children: [
               Icon(Icons.medical_services, color: Colors.green, size: 20),
               SizedBox(width: 8),
-              Text(
-                'Medicina Preventiva',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.green[700],
-                ),
-              ),
+              Text('Medicina Preventiva', style: TextStyle(fontSize: 16)),
             ],
           ),
         ),
@@ -1259,7 +1341,7 @@ class PagAnimales extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Seleccionar Medicinas Preventivas',
+                        'Med. Preventiva - Manejo',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           color: Colors.green[700],
@@ -1304,7 +1386,7 @@ class PagAnimales extends StatelessWidget {
                 ),
               ] else ...[
                 Text(
-                  'No hay medicinas seleccionadas',
+                  'No hay opciones seleccionadas',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[500],
@@ -1319,7 +1401,7 @@ class PagAnimales extends StatelessWidget {
     );
   }
 
-  // NUEVO MÉTODO: Diálogo completo para selección de medicinas
+  //Diálogo completo para selección de medicinas
   void _mostrarDialogoMedicinasCompleto(
     BuildContext context,
     List<String> seleccionadas,
@@ -1336,7 +1418,7 @@ class PagAnimales extends StatelessWidget {
               children: [
                 Icon(Icons.medical_services, color: Colors.green),
                 SizedBox(width: 8),
-                Text('Medicina Preventiva'),
+                Text('Medicina preventiva\ny Manejo'),
               ],
             ),
             content: Container(
@@ -1344,19 +1426,6 @@ class PagAnimales extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Búsqueda
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Buscar medicina...',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      // Puedes implementar búsqueda aquí si lo deseas
-                    },
-                  ),
-                  SizedBox(height: 16),
-
                   // Lista de checkboxes
                   Container(
                     height: 300,
@@ -1390,7 +1459,7 @@ class PagAnimales extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      '${seleccionesTemporales.length} medicinas seleccionadas',
+                      '${seleccionesTemporales.length} opciones seleccionadas',
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         color: Colors.green[700],
@@ -1404,13 +1473,6 @@ class PagAnimales extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text('Cancelar'),
-              ),
-              TextButton(
-                onPressed: () {
-                  seleccionesTemporales.clear();
-                  setDialogState(() {});
-                },
-                child: Text('Limpiar', style: TextStyle(color: Colors.red)),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -1585,9 +1647,6 @@ class PagAnimales extends StatelessWidget {
     final fechaNacimientoController = TextEditingController(
       text: tganado['nacimientogdo']?.toString() ?? '',
     );
-    final corralController = TextEditingController(
-      text: tganado['corralgdo']?.toString() ?? '',
-    );
     final alimentoController = TextEditingController(
       text: tganado['alimentogdo']?.toString() ?? '',
     );
@@ -1600,9 +1659,13 @@ class PagAnimales extends StatelessWidget {
     );
     String? estatusgdo = tganado['estatusgdo']?.toString();
     String? sexoSeleccionado = tganado['sexogdo']?.toString();
+    String? corralSeleccionado = tganado['corralgdo']?.toString();
 
     File? selectedImage;
     String? imagePath = tganado['fotogdo']?.toString();
+
+    List<String> corralesDisponibles = [];
+    bool cargandoCorrales = true;
 
     // Cargar imagen existente si hay una
     if (imagePath != null && imagePath!.isNotEmpty) {
@@ -1617,6 +1680,24 @@ class PagAnimales extends StatelessWidget {
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
+            Future<void> _cargarCorrales() async {
+              try {
+                final corrales = await SQLHelper.getNombresCorrales();
+                setState(() {
+                  corralesDisponibles = corrales;
+                  cargandoCorrales = false;
+                });
+              } catch (e) {
+                print("Error cargando corrales: $e");
+                setState(() {
+                  cargandoCorrales = false;
+                });
+              }
+            }
+
+            if (cargandoCorrales) {
+              _cargarCorrales();
+            }
             return AlertDialog(
               title: Text("Editar Animal"),
               content: SingleChildScrollView(
@@ -1711,11 +1792,56 @@ class PagAnimales extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: corralController,
-                      decoration: InputDecoration(
-                        labelText: 'Corral',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: _validarValorCorral(
+                          corralSeleccionado,
+                          corralesDisponibles,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Corral',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'Selecciona un corral',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                          ...corralesDisponibles.map((String corral) {
+                            return DropdownMenuItem(
+                              value: corral,
+                              child: Text(corral),
+                            );
+                          }).toList(),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            corralSeleccionado = newValue;
+                          });
+                        },
+                        hint: cargandoCorrales
+                            ? Row(
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Cargando corrales...'),
+                                ],
+                              )
+                            : Text('Selecciona un corral'),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -1809,7 +1935,7 @@ class PagAnimales extends StatelessWidget {
                       'sexogdo': sexoSeleccionado,
                       'razagdo': razaController.text,
                       'nacimientogdo': fechaNacimientoController.text,
-                      'corralgdo': corralController.text,
+                      'corralgdo': corralSeleccionado ?? '',
                       'alimentogdo': alimentoController.text,
                       'prodgdo': produccionController.text,
                       'estatusgdo': estatusgdo,
@@ -1848,6 +1974,29 @@ class PagAnimales extends StatelessWidget {
         );
       },
     );
+  }
+
+  String? _validarValorCorral(String? valor, List<String> corralesDisponibles) {
+    if (valor == null) return null;
+
+    // Verificar si el valor existe exactamente en la lista
+    if (corralesDisponibles.contains(valor)) {
+      return valor;
+    }
+
+    // Buscar coincidencias ignorando case sensitivity (mayus o minus xd)
+    final valorLower = valor.toLowerCase();
+    for (final corral in corralesDisponibles) {
+      if (corral.toLowerCase() == valorLower) {
+        return corral; // devuelve el valor correcto de la lista
+      }
+    }
+
+    // Si no se encuentra, retornar null para evitar el error y se trabe la app
+    print(
+      'Valor de corral no encontrado: "$valor". Corrales disponibles: $corralesDisponibles',
+    );
+    return null;
   }
 
   void _showDeleteConfirmation(
@@ -2467,16 +2616,20 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildRegistroInfoRow(
-                  'Procedimiento',
-                  registro['procedimiento'] ?? 'No especificado',
-                ),
-                _buildRegistroInfoRow(
                   'Veterinario',
                   registro['nomvet'] ?? 'No especificado',
                 ),
                 _buildRegistroInfoRow(
+                  'Procedimiento',
+                  registro['procedimiento'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
                   'Condición de Salud',
                   registro['condicionsalud'] ?? 'No especificado',
+                ),
+                _buildRegistroInfoRow(
+                  'Med. Preventiva - Manejo',
+                  registro['medprev'] ?? 'No especificado',
                 ),
                 _buildRegistroInfoRow(
                   'Fecha de Revisión',

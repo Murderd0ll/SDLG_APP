@@ -303,6 +303,7 @@ class SQLHelper {
         faproxparto TEXT,
         fnuevoservicio TEXT,
         tecnica TEXT,
+        observacion TEXT,
         areteanimal TEXT
       )""");
       print("Tabla 'treprod' creada/verificada");
@@ -494,6 +495,57 @@ class SQLHelper {
       return result;
     } catch (e) {
       print("Error obteniendo registros de salud: $e");
+      return [];
+    }
+  }
+  // =========== Métodos de reproducción para animales ===========
+
+  //Este es para crear un registro de reproducción para un animal
+  static Future<int> createRegistroReproduccion(
+    Map<String, dynamic> data,
+  ) async {
+    final db = await SQLHelper.db();
+    try {
+      final reproduccionData = {
+        'areteanimal': data['areteanimal'] ?? '',
+        'cargada': data['cargada'] ?? '',
+        'cantpartos': data['cantpartos'] ?? '',
+        'fservicioactual': data['fservicioactual'] ?? '',
+        'faproxparto': data['faproxparto'] ?? '',
+        'fnuevoservicio': data['fnuevoservicio'] ?? '',
+        'tecnica': data['tecnica'] ?? '',
+        'observacion': data['observacion'] ?? '',
+      };
+
+      final id = await db.insert(
+        'treprod',
+        reproduccionData,
+        conflictAlgorithm: sql.ConflictAlgorithm.replace,
+      );
+      print("Registro de salud creado con ID: $id");
+      return id;
+    } catch (e) {
+      print("Error creando registro de salud: $e");
+      rethrow;
+    }
+  }
+
+  // Obtener registros de reproducción por arete
+  static Future<List<Map<String, dynamic>>> getRegistrosReproduccionPorArete(
+    String areteanimal,
+  ) async {
+    final db = await SQLHelper.db();
+    try {
+      final result = await db.query(
+        'treprod',
+        where: "areteanimal LIKE ?",
+        whereArgs: ['%$areteanimal%'],
+        orderBy: "fservicioactual DESC",
+      );
+      print("Registros obtenidos: ${result.length} para arete $areteanimal");
+      return result;
+    } catch (e) {
+      print("Error obteniendo los registros: $e");
       return [];
     }
   }
