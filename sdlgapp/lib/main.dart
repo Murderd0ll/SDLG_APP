@@ -444,10 +444,7 @@ class _InicioState extends State<Inicio> {
                   MaterialPageRoute(builder: (context) => LoginPage()),
                 );
               },
-              child: Text(
-                'Cerrar Sesión',
-                style: TextStyle(color: Colors.orange),
-              ),
+              child: Text('Cerrar Sesión', style: TextStyle(color: Colors.red)),
             ),
           ],
         );

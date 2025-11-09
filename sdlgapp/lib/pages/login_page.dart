@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sdlgapp/main.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -78,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 27, 26, 34),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -87,27 +88,36 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo/Icono de la aplicación
-                Icon(Icons.pets, size: 80, color: Colors.white),
+                FaIcon(
+                  FontAwesomeIcons.cow,
+                  size: 80,
+                  color: const Color.fromARGB(255, 137, 77, 77),
+                ),
                 const SizedBox(height: 20),
                 Text(
                   'SDLG APP',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color.fromARGB(255, 137, 77, 77),
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Sistema de Gestión Ganadera',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 16),
+                  'Software De Los Ganaderos',
+                  style: TextStyle(color: Colors.grey[700], fontSize: 16),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'para la Ganadería el Colibrí',
+                  style: TextStyle(color: Colors.grey[700], fontSize: 16),
                 ),
                 const SizedBox(height: 40),
 
                 // Campo de usuario
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color.fromARGB(39, 158, 158, 158),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
@@ -125,7 +135,7 @@ class _LoginPageState extends State<LoginPage> {
                 // Campo de contraseña
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color.fromARGB(39, 158, 158, 158),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
@@ -162,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 182, 128, 128),
+                      backgroundColor: const Color.fromARGB(255, 137, 77, 77),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -191,7 +201,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 20),
                 Text(
-                  'Versión 1.0',
+                  'Si no tiene una cuenta, contacte al administrador.',
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],

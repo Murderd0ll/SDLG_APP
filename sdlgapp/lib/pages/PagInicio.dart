@@ -103,44 +103,6 @@ class _PagInicioState extends State<PagInicio> {
     );
   }
 
-  // Widget para mostrar acciones rápidas
-  Widget _buildAccionRapida(
-    String titulo,
-    IconData icono,
-    VoidCallback onTap,
-    Color color,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      child: Card(
-        elevation: 2,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icono, size: 30, color: color),
-              const SizedBox(height: 8),
-              Text(
-                titulo,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

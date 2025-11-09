@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
 import 'package:sdlgapp/pages/login_page.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -57,17 +58,21 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 27, 26, 34),
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.pets, size: 80, color: Colors.white),
+            FaIcon(
+              FontAwesomeIcons.cow,
+              size: 80,
+              color: const Color.fromARGB(255, 137, 77, 77),
+            ),
             const SizedBox(height: 20),
             Text(
               'SDLG APP',
               style: TextStyle(
-                color: Colors.white,
+                color: const Color.fromARGB(255, 137, 77, 77),
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
@@ -75,13 +80,13 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 20),
             CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(
-                Color.fromARGB(255, 182, 128, 128),
+                const Color.fromARGB(255, 137, 77, 77),
               ),
             ),
             const SizedBox(height: 20),
             Text(
               'Inicializando aplicación...',
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: const Color.fromARGB(255, 137, 77, 77)),
             ),
           ],
         ),
