@@ -10,6 +10,8 @@ import 'package:sdlgapp/pages/PagCorrales.dart';
 import 'package:sdlgapp/pages/PagInicio.dart';
 import 'package:sdlgapp/pages/PagPropietarios.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
+import 'package:sdlgapp/pages/login_page.dart';
+import 'package:sdlgapp/pages/splash_screen.dart';
 
 void main() {
   runApp(SDLGAPP());
@@ -24,13 +26,14 @@ class SDLGAPP extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       title: "SDLG",
-      home: Inicio(),
+      home: SplashScreen(),
     );
   }
 }
 
 class Inicio extends StatefulWidget {
-  const Inicio({super.key});
+  final Map<String, dynamic>? user;
+  const Inicio({super.key, this.user});
 
   @override
   State<Inicio> createState() => _InicioState();
@@ -43,83 +46,160 @@ class _InicioState extends State<Inicio> {
   List<Map<String, dynamic>> _propietariosData = [];
   List<Map<String, dynamic>> _corralesData = [];
 
+  Map<String, dynamic>? _currentUser;
+
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _currentUser = widget.user;
+    print("=== INICIANDO APLICACIÓN PRINCIPAL ===");
+    print("Usuario: ${_currentUser?['nombre']}");
     _initializeApp();
   }
 
   void _initializeApp() async {
-    // ***********SOLO EJECUTAR ESTO UNA VEZ - LUEGO COMENTAR********** es para reiniciar la base de datos cada vez q hayan cambios
-    //o se vaya a iniciar la app por primera vez
-    print("=== INICIALIZANDO BASE DE DATOS ===");
+    try {
+      print("=== CARGANDO DATOS EN INICIO ===");
 
-    await SQLHelper.debugDatabaseLocation();
-    await SQLHelper.resetDatabase(); // ****************COMENTAR ESTA LÍNEA DESPUÉS DE LA PRIMERA EJECUCIÓN*********************************
-    print("=== BASE DE DATOS REINICIADA ===");
+      // Cargar datos iniciales de manera asíncrona
+      await _cargarDatosIniciales();
 
-    // este es para verificar el estado de la base de datos
-    await SQLHelper.debugDatabaseStatus();
+      setState(() {
+        _isLoading = false;
+      });
 
-    // este es para cargar datos de la página actual
-    _cargarDatosPagina(_pagActual);
+      print("=== DATOS CARGADOS EXITOSAMENTE ===");
+    } catch (e) {
+      print("❌ Error en _initializeApp: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Método separado para cargar datos iniciales
+  Future<void> _cargarDatosIniciales() async {
+    try {
+      // Cargar todos los datos necesarios para la página actual
+      switch (_pagActual) {
+        case 1: // Becerros
+          await _refreshBecerros();
+          break;
+        case 2: // Animales
+          await _refreshAnimales();
+          break;
+        case 3: // Propietarios
+          await _refreshPropietarios();
+          break;
+        case 4: // Corrales
+          await _refreshCorrales();
+          break;
+        default: // Inicio
+          // Para la página de inicio, no necesitamos cargar datos pesados
+          await Future.delayed(Duration(milliseconds: 100));
+          break;
+      }
+    } catch (e) {
+      print("❌ Error cargando datos iniciales: $e");
+      rethrow;
+    }
   }
 
   // Métodos para cargar datos específicos
-  void _refreshAnimales() async {
-    final data = await SQLHelper.getAllAnimales();
-    setState(() {
-      _animalesData = data;
-      _isLoading = false;
-    });
+  Future<void> _refreshAnimales() async {
+    try {
+      print("Cargando animales...");
+      final data = await SQLHelper.getAllAnimales();
+      setState(() {
+        _animalesData = data;
+      });
+      print("Animales cargados: ${data.length} registros");
+    } catch (e) {
+      print("❌ Error en _refreshAnimales: $e");
+      rethrow;
+    }
   }
 
-  void _refreshBecerros() async {
-    final data = await SQLHelper.getAllBecerros();
-    setState(() {
-      _becerrosData = data;
-      _isLoading = false;
-    });
+  Future<void> _refreshBecerros() async {
+    try {
+      print("Cargando becerros...");
+      final data = await SQLHelper.getAllBecerros();
+      setState(() {
+        _becerrosData = data;
+      });
+      print("Becerros cargados: ${data.length} registros");
+    } catch (e) {
+      print("❌ Error en _refreshBecerros: $e");
+      rethrow;
+    }
   }
 
-  void _refreshPropietarios() async {
-    final data = await SQLHelper.getAllPropietarios();
-    setState(() {
-      _propietariosData = data;
-      _isLoading = false;
-    });
+  Future<void> _refreshPropietarios() async {
+    try {
+      print("Cargando propietarios...");
+      final data = await SQLHelper.getAllPropietarios();
+      setState(() {
+        _propietariosData = data;
+      });
+      print("Propietarios cargados: ${data.length} registros");
+    } catch (e) {
+      print("❌ Error en _refreshPropietarios: $e");
+      rethrow;
+    }
   }
 
-  void _refreshCorrales() async {
-    final data = await SQLHelper.getAllCorrales();
-    setState(() {
-      _corralesData = data;
-      _isLoading = false;
-    });
+  Future<void> _refreshCorrales() async {
+    try {
+      print("Cargando corrales...");
+      final data = await SQLHelper.getAllCorrales();
+      setState(() {
+        _corralesData = data;
+      });
+      print("Corrales cargados: ${data.length} registros");
+    } catch (e) {
+      print("❌ Error en _refreshCorrales: $e");
+      rethrow;
+    }
   }
 
   // Cargar datos cuando cambia la página
-  void _cargarDatosPagina(int pagina) {
-    switch (pagina) {
-      case 1: // Becerros
-        _refreshBecerros();
-        break;
-      case 2: // Animales
-        _refreshAnimales();
-        break;
-      case 3: // Propietarios
-        _refreshPropietarios();
-        break;
-      case 4: // Corrales
-        _refreshCorrales();
-        break;
-      default:
-        setState(() {
-          _isLoading = false;
-        });
-        break;
+  void _cargarDatosPagina(int pagina) async {
+    print("Cambiando a página: $pagina");
+
+    setState(() {
+      _isLoading = true;
+      _pagActual = pagina;
+      if (pagina < 3) {
+        _bottomNavIndex = pagina;
+      }
+    });
+
+    try {
+      switch (pagina) {
+        case 1: // Becerros
+          await _refreshBecerros();
+          break;
+        case 2: // Animales
+          await _refreshAnimales();
+          break;
+        case 3: // Propietarios
+          await _refreshPropietarios();
+          break;
+        case 4: // Corrales
+          await _refreshCorrales();
+          break;
+        default: // Inicio
+          // No necesita carga de datos
+          break;
+      }
+    } catch (e) {
+      print("❌ Error cargando datos de página $pagina: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -180,22 +260,12 @@ class _InicioState extends State<Inicio> {
 
   //Función para cambiar de página desde el drawer
   void _cambiarPaginaDesdeDrawer(int nuevaPagina) {
-    setState(() {
-      _pagActual = nuevaPagina;
-      if (nuevaPagina < 3) {
-        _bottomNavIndex = nuevaPagina;
-      } else {}
-    });
     _cargarDatosPagina(nuevaPagina);
     Navigator.pop(context);
   }
 
   //función para cambiar de página desde el bottom navigation bar
   void _cambiarPaginaDesdeBottomNav(int index) {
-    setState(() {
-      _pagActual = index;
-      _bottomNavIndex = index;
-    });
     _cargarDatosPagina(index);
   }
 
@@ -207,23 +277,39 @@ class _InicioState extends State<Inicio> {
         child: ListView(
           children: [
             SizedBox(
-              height: 70,
+              height: 160,
               child: DrawerHeader(
                 decoration: const BoxDecoration(
                   color: Color.fromARGB(255, 27, 26, 34),
                 ),
-                child: Row(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    const Text(
-                      'SDLG',
-                      style: TextStyle(color: Colors.white, fontSize: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'SDLG',
+                          style: TextStyle(color: Colors.white, fontSize: 24),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
+                    const SizedBox(height: 10),
+                    if (_currentUser != null) ...[
+                      Text(
+                        'Usuario: ${_currentUser!['nombre']}',
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                      Text(
+                        'Rol: ${_currentUser!['rol']}',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -264,6 +350,16 @@ class _InicioState extends State<Inicio> {
               onTap: () => _cambiarPaginaDesdeDrawer(4),
             ),
             const Divider(color: Colors.white70),
+            ListTile(
+              iconColor: Colors.white,
+              textColor: Colors.white,
+              leading: Icon(Icons.logout),
+              title: const Text('Cerrar Sesión'),
+              onTap: () {
+                Navigator.pop(context);
+                _showLogoutConfirmation(context);
+              },
+            ),
             ListTile(
               iconColor: Colors.white,
               textColor: Colors.white,
@@ -326,5 +422,36 @@ class _InicioState extends State<Inicio> {
       default:
         return 'SDLG';
     }
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Cerrar sesión'),
+          content: Text('¿Estás seguro de que quieres cerrar sesión?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Cierra el diálogo
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+              },
+              child: Text(
+                'Cerrar Sesión',
+                style: TextStyle(color: Colors.orange),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
