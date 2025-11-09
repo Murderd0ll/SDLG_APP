@@ -277,7 +277,7 @@ class _InicioState extends State<Inicio> {
         child: ListView(
           children: [
             SizedBox(
-              height: 160,
+              height: 94,
               child: DrawerHeader(
                 decoration: const BoxDecoration(
                   color: Color.fromARGB(255, 27, 26, 34),
@@ -300,16 +300,6 @@ class _InicioState extends State<Inicio> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    if (_currentUser != null) ...[
-                      Text(
-                        'Usuario: ${_currentUser!['nombre']}',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
-                      Text(
-                        'Rol: ${_currentUser!['rol']}',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                    ],
                   ],
                 ),
               ),
