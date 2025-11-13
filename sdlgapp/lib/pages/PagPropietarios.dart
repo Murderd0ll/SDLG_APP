@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
 
 class ImageService {
@@ -14,8 +15,9 @@ class ImageService {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 70,
-        maxWidth: 800,
+        imageQuality: 85,
+        maxWidth: 1024,
+        maxHeight: 1024,
       );
       return image != null ? await image.readAsBytes() : null;
     } catch (e) {
@@ -29,8 +31,9 @@ class ImageService {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 70,
-        maxWidth: 800,
+        imageQuality: 85,
+        maxWidth: 1024,
+        maxHeight: 1024,
       );
       return image != null ? await image.readAsBytes() : null;
     } catch (e) {
@@ -54,10 +57,20 @@ class ImageService {
     }
   }
 
-  // Crear Image widget desde base64 string
-  static Widget base64ToImage(String? base64String) {
-    final bytes = base64ToBytes(base64String);
-    if (bytes != null) {
+  // Convertir bytes a base64 string (para mostrar)
+  static String? bytesToBase64(Uint8List? bytes) {
+    if (bytes == null || bytes.isEmpty) return null;
+    try {
+      return base64Encode(bytes);
+    } catch (e) {
+      print("Error codificando a base64: $e");
+      return null;
+    }
+  }
+
+  // Crear Image widget desde bytes
+  static Widget bytesToImage(Uint8List? bytes) {
+    if (bytes != null && bytes.isNotEmpty) {
       return Image.memory(
         bytes,
         fit: BoxFit.cover,
@@ -70,14 +83,30 @@ class ImageService {
     }
   }
 
-  // Crear MemoryImage para CircleAvatar
+  // Crear Image widget desde base64 string (para compatibilidad)
+  static Widget base64ToImage(String? base64String) {
+    final bytes = base64ToBytes(base64String);
+    return bytesToImage(bytes);
+  }
+
+  // Crear MemoryImage para CircleAvatar desde bytes
+  static MemoryImage? bytesToMemoryImage(Uint8List? bytes) {
+    return bytes != null && bytes.isNotEmpty ? MemoryImage(bytes) : null;
+  }
+
+  // Crear MemoryImage para CircleAvatar desde base64 (para compatibilidad)
   static MemoryImage? base64ToMemoryImage(String? base64String) {
     final bytes = base64ToBytes(base64String);
-    return bytes != null ? MemoryImage(bytes) : null;
+    return bytesToMemoryImage(bytes);
   }
 
   static Widget _buildPlaceholderIcon() {
     return Icon(Icons.photo_camera, size: 50, color: Colors.grey[400]);
+  }
+
+  // Verificar si los bytes de imagen son válidos
+  static bool isImageBytesValid(Uint8List? bytes) {
+    return bytes != null && bytes.isNotEmpty;
   }
 
   // Verificar si una imagen en base64 es válida
@@ -88,6 +117,30 @@ class ImageService {
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  // Comprimir imagen si es muy grande
+  static Future<Uint8List?> compressImageIfNeeded(Uint8List? imageBytes) async {
+    if (imageBytes == null) return null;
+
+    // Verificar tamaño (5MB como en tu software)
+    if (imageBytes.length <= 5 * 1024 * 1024) {
+      return imageBytes;
+    }
+
+    try {
+      // Comprimir la imagen
+      final compressedImage = await FlutterImageCompress.compressWithList(
+        imageBytes,
+        minHeight: 800,
+        minWidth: 800,
+        quality: 85,
+      );
+      return Uint8List.fromList(compressedImage);
+    } catch (e) {
+      print("Error comprimiendo imagen: $e");
+      return imageBytes; // Retornar original si falla la compresión
     }
   }
 }
@@ -222,13 +275,22 @@ class PagPropietarios extends StatelessWidget {
     Map<String, dynamic> tpropietarios,
     BuildContext context,
   ) {
-    final imageBase64 = tpropietarios['fotoprop']?.toString();
+    final fotoData = tpropietarios['fotoprop'];
+    Uint8List? imageBytes;
+
+    if (fotoData is Uint8List) {
+      // Si ya viene como bytes, usar directamente
+      imageBytes = fotoData;
+    } else if (fotoData is String) {
+      // Si viene como base64, convertir a bytes
+      imageBytes = ImageService.base64ToBytes(fotoData);
+    }
 
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       elevation: 2,
       child: ListTile(
-        leading: _buildPropietarioAvatar(imageBase64),
+        leading: _buildPropietarioAvatar(imageBytes),
         title: Text(
           tpropietarios['nombreprop'] ?? 'Sin Nombre',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -303,12 +365,10 @@ class PagPropietarios extends StatelessWidget {
     );
   }
 
-  Widget _buildPropietarioAvatar(String? imageBase64) {
-    if (imageBase64 != null &&
-        imageBase64.isNotEmpty &&
-        ImageService.isBase64ImageValid(imageBase64)) {
+  Widget _buildPropietarioAvatar(Uint8List? imageBytes) {
+    if (imageBytes != null && imageBytes.isNotEmpty) {
       try {
-        final memoryImage = ImageService.base64ToMemoryImage(imageBase64);
+        final memoryImage = ImageService.bytesToMemoryImage(imageBytes);
         if (memoryImage != null) {
           return CircleAvatar(
             radius: 25,
@@ -319,7 +379,7 @@ class PagPropietarios extends StatelessWidget {
           );
         }
       } catch (e) {
-        print("Error decodificando imagen: $e");
+        print("Error cargando imagen: $e");
       }
     }
     return _buildDefaultAvatar();
@@ -501,6 +561,11 @@ class PagPropietarios extends StatelessWidget {
                       return;
                     }
 
+                    Uint8List? fotoFinal =
+                        await ImageService.compressImageIfNeeded(
+                          selectedImageBytes,
+                        );
+
                     final nuevoPropietario = {
                       'nombreprop': nombreController.text,
                       'telprop': telController.text,
@@ -510,7 +575,7 @@ class PagPropietarios extends StatelessWidget {
                       'psgprop': psgController.text,
                       'uppprop': uppController.text,
                       'observacionprop': observacionController.text,
-                      'fotoprop': selectedImageBytes,
+                      'fotoprop': fotoFinal,
                     };
 
                     try {
@@ -687,11 +752,12 @@ class PagPropietarios extends StatelessWidget {
     );
 
     Uint8List? selectedImageBytes;
-    String? existingImageBase64 = tpropietarios['fotoprop']?.toString();
 
-    // Cargar imagen existente si hay una
-    if (existingImageBase64 != null && existingImageBase64.isNotEmpty) {
-      selectedImageBytes = ImageService.base64ToBytes(existingImageBase64);
+    final fotoData = tpropietarios['fotoprop'];
+    if (fotoData is Uint8List) {
+      selectedImageBytes = fotoData;
+    } else if (fotoData is String) {
+      selectedImageBytes = ImageService.base64ToBytes(fotoData);
     }
 
     showDialog(
@@ -803,16 +869,21 @@ class PagPropietarios extends StatelessWidget {
                       return;
                     }
 
+                    Uint8List? fotoFinal =
+                        await ImageService.compressImageIfNeeded(
+                          selectedImageBytes,
+                        );
+
                     final propietarioactualizado = {
                       'nombreprop': nombreController.text,
                       'telprop': telController.text,
-                      'correoprop': dirController.text,
-                      'dirprop': correoController.text,
+                      'correoprop': correoController.text,
+                      'dirprop': dirController.text,
                       'rfcprop': rfcController.text,
                       'psgprop': psgController.text,
                       'uppprop': uppController.text,
                       'observacionprop': observacionController.text,
-                      'fotoprop': selectedImageBytes,
+                      'fotoprop': fotoFinal,
                     };
 
                     try {
@@ -905,7 +976,14 @@ class PropietarioDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagePath = tpropietarios['fotoprop']?.toString();
+    final fotoData = tpropietarios['fotoprop'];
+    Uint8List? imageBytes;
+
+    if (fotoData is Uint8List) {
+      imageBytes = fotoData;
+    } else if (fotoData is String) {
+      imageBytes = ImageService.base64ToBytes(fotoData);
+    }
 
     return Dialog(
       insetPadding: EdgeInsets.all(20),
@@ -941,7 +1019,7 @@ class PropietarioDetailsDialog extends StatelessWidget {
               SizedBox(height: 20),
 
               // Foto del propietario
-              _buildPhotoSection(imagePath),
+              _buildPhotoSection(imageBytes),
 
               SizedBox(height: 20),
 
@@ -967,12 +1045,9 @@ class PropietarioDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildPhotoSection(String? imageBase64) {
+  Widget _buildPhotoSection(Uint8List? imageBytes) {
     return Center(
-      child:
-          imageBase64 != null &&
-              imageBase64.isNotEmpty &&
-              ImageService.isBase64ImageValid(imageBase64)
+      child: imageBytes != null && imageBytes.isNotEmpty
           ? Container(
               width: 200,
               height: 200,
@@ -988,7 +1063,7 @@ class PropietarioDetailsDialog extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
-                child: ImageService.base64ToImage(imageBase64),
+                child: ImageService.bytesToImage(imageBytes),
               ),
             )
           : _buildPlaceholderPhoto(),

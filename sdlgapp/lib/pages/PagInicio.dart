@@ -147,7 +147,7 @@ class _PagInicioState extends State<PagInicio> {
                     children: [
                       _buildStatCard(
                         "Total de Ganado",
-                        _totalAnimales,
+                        _totalAnimales + _totalBecerros,
                         FontAwesomeIcons.cow,
                         Colors.brown,
                       ),
@@ -196,7 +196,7 @@ class _PagInicioState extends State<PagInicio> {
                             _totalAnimales + _totalBecerros,
                           ),
                           _buildResumenItem(
-                            "Animales adultos:",
+                            "Total de ganado adulto:",
                             _totalAnimales,
                           ),
                           _buildResumenItem("Becerros:", _totalBecerros),

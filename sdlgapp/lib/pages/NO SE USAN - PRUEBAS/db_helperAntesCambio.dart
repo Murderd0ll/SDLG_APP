@@ -52,27 +52,6 @@ class SQLHelper {
     }
   }
 
-  //Este es para procesar las imagenes
-  static Uint8List? _processImageData(dynamic imageData) {
-    if (imageData == null) return null;
-
-    try {
-      if (imageData is Uint8List) {
-        // Ya está en formato bytes, retornar directamente
-        return imageData;
-      } else if (imageData is String) {
-        // Si viene como base64, convertir a bytes
-        if (imageData.contains(',')) {
-          imageData = imageData.split(',').last;
-        }
-        return base64Decode(imageData);
-      }
-    } catch (e) {
-      print("Error procesando imagen: $e");
-    }
-    return null;
-  }
-
   static Future<void> exportRealDatabase() async {
     try {
       // Aquí se obtiene la ruta "real" de la base de datos, en donde se está guardando en el telefono
@@ -1228,6 +1207,34 @@ class SQLHelper {
       print("Error buscando corrales: $e");
       return [];
     }
+  }
+
+  // =========== FUNCIÓN AUXILIAR PARA PROCESAR IMÁGENES ===========
+
+  // Función que convierte Uint8List a base64 o mantiene base64 existente
+  static String? _processImageData(dynamic imageData) {
+    if (imageData == null) {
+      return null;
+    }
+
+    // Si ya es string (base64), retornarlo directamente
+    if (imageData is String) {
+      // Verificar si ya es base64 válido
+      if (imageData.startsWith('data:image') ||
+          (imageData.length > 100 && !imageData.contains('/'))) {
+        return imageData;
+      }
+      // Si es una ruta de archivo antigua, retornar null para eliminarla
+      return null;
+    }
+
+    // Si es Uint8List, convertir a base64
+    if (imageData is Uint8List) {
+      return base64Encode(imageData);
+    }
+
+    // Para cualquier otro tipo, intentar convertirlo a string
+    return imageData.toString();
   }
 
   // ************* Métodos de estadísticas/informes ************* ESTE ES para las estadisticas del inicio xd

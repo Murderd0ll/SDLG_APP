@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -15,8 +16,9 @@ class ImageService {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 70,
-        maxWidth: 800,
+        imageQuality: 85,
+        maxWidth: 1024,
+        maxHeight: 1024,
       );
       return image != null ? await image.readAsBytes() : null;
     } catch (e) {
@@ -30,8 +32,9 @@ class ImageService {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 70,
-        maxWidth: 800,
+        imageQuality: 85,
+        maxWidth: 1024,
+        maxHeight: 1024,
       );
       return image != null ? await image.readAsBytes() : null;
     } catch (e) {
@@ -55,10 +58,20 @@ class ImageService {
     }
   }
 
-  // Crear Image widget desde base64 string
-  static Widget base64ToImage(String? base64String) {
-    final bytes = base64ToBytes(base64String);
-    if (bytes != null) {
+  // Convertir bytes a base64 string (para mostrar)
+  static String? bytesToBase64(Uint8List? bytes) {
+    if (bytes == null || bytes.isEmpty) return null;
+    try {
+      return base64Encode(bytes);
+    } catch (e) {
+      print("Error codificando a base64: $e");
+      return null;
+    }
+  }
+
+  // Crear Image widget desde bytes
+  static Widget bytesToImage(Uint8List? bytes) {
+    if (bytes != null && bytes.isNotEmpty) {
       return Image.memory(
         bytes,
         fit: BoxFit.cover,
@@ -71,17 +84,33 @@ class ImageService {
     }
   }
 
-  // Crear MemoryImage para CircleAvatar
+  // Crear Image widget desde base64 string (para compatibilidad)
+  static Widget base64ToImage(String? base64String) {
+    final bytes = base64ToBytes(base64String);
+    return bytesToImage(bytes);
+  }
+
+  // Crear MemoryImage para CircleAvatar desde bytes
+  static MemoryImage? bytesToMemoryImage(Uint8List? bytes) {
+    return bytes != null && bytes.isNotEmpty ? MemoryImage(bytes) : null;
+  }
+
+  // Crear MemoryImage para CircleAvatar desde base64 (para compatibilidad)
   static MemoryImage? base64ToMemoryImage(String? base64String) {
     final bytes = base64ToBytes(base64String);
-    return bytes != null ? MemoryImage(bytes) : null;
+    return bytesToMemoryImage(bytes);
   }
 
   static Widget _buildPlaceholderIcon() {
     return Icon(Icons.photo_camera, size: 50, color: Colors.grey[400]);
   }
 
-  // Verificar si una imagen en base64 es válida
+  // Verificar si los bytes de imagen son válidos
+  static bool isImageBytesValid(Uint8List? bytes) {
+    return bytes != null && bytes.isNotEmpty;
+  }
+
+  // Verificar si una imagen en base64 es válida (para compatibilidad)
   static bool isBase64ImageValid(String? base64String) {
     if (base64String == null || base64String.isEmpty) return false;
     try {
@@ -89,6 +118,30 @@ class ImageService {
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  // Comprimir imagen si es muy grande (similar al software)
+  static Future<Uint8List?> compressImageIfNeeded(Uint8List? imageBytes) async {
+    if (imageBytes == null) return null;
+
+    // Verificar tamaño (5MB como en tu software)
+    if (imageBytes.length <= 5 * 1024 * 1024) {
+      return imageBytes;
+    }
+
+    try {
+      // Comprimir la imagen
+      final compressedImage = await FlutterImageCompress.compressWithList(
+        imageBytes,
+        minHeight: 800,
+        minWidth: 800,
+        quality: 85,
+      );
+      return Uint8List.fromList(compressedImage);
+    } catch (e) {
+      print("Error comprimiendo imagen: $e");
+      return imageBytes; // Retornar original si falla la compresión
     }
   }
 }
@@ -228,7 +281,17 @@ class PagAnimales extends StatelessWidget {
   }
 
   Widget _buildAnimalCard(Map<String, dynamic> tganado, BuildContext context) {
-    final imageBase64 = tganado['fotogdo']?.toString();
+    final fotoData = tganado['fotogdo'];
+    Uint8List? imageBytes;
+
+    if (fotoData is Uint8List) {
+      // Si ya viene como bytes, usar directamente
+      imageBytes = fotoData;
+    } else if (fotoData is String) {
+      // Si viene como base64, convertir a bytes
+      imageBytes = ImageService.base64ToBytes(fotoData);
+    }
+
     final bool eshembra =
         tganado['sexogdo']?.toString().toLowerCase() == 'hembra';
 
@@ -236,7 +299,7 @@ class PagAnimales extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 12),
       elevation: 2,
       child: ListTile(
-        leading: _buildAnimalAvatar(imageBase64),
+        leading: _buildAnimalAvatar(imageBytes),
         title: Text(
           tganado['aretegdo'] ?? 'Sin arete',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -251,8 +314,7 @@ class PagAnimales extends StatelessWidget {
 
             if (tganado['sexogdo'] != null) Text('Sexo: ${tganado['sexogdo']}'),
 
-            if (tganado['razagdo'] != null)
-              Text('Raza: ${tganado['razagdo']} kg'),
+            if (tganado['razagdo'] != null) Text('Raza: ${tganado['razagdo']}'),
 
             if (tganado['estatusgdo'] != null)
               Text('Estatus: ${tganado['estatusgdo']}'),
@@ -341,12 +403,10 @@ class PagAnimales extends StatelessWidget {
     );
   }
 
-  Widget _buildAnimalAvatar(String? imageBase64) {
-    if (imageBase64 != null &&
-        imageBase64.isNotEmpty &&
-        ImageService.isBase64ImageValid(imageBase64)) {
+  Widget _buildAnimalAvatar(Uint8List? imageBytes) {
+    if (imageBytes != null && imageBytes.isNotEmpty) {
       try {
-        final memoryImage = ImageService.base64ToMemoryImage(imageBase64);
+        final memoryImage = ImageService.bytesToMemoryImage(imageBytes);
         if (memoryImage != null) {
           return CircleAvatar(
             radius: 25,
@@ -357,7 +417,7 @@ class PagAnimales extends StatelessWidget {
           );
         }
       } catch (e) {
-        print("Error decodificando imagen: $e");
+        print("Error cargando imagen: $e");
       }
     }
     return _buildDefaultAvatar();
@@ -1121,6 +1181,11 @@ class PagAnimales extends StatelessWidget {
                       return;
                     }
 
+                    Uint8List? fotoFinal =
+                        await ImageService.compressImageIfNeeded(
+                          selectedImageBytes,
+                        );
+
                     final nuevoAnimal = {
                       'aretegdo': areteController.text,
                       'nombregdo': nombreController.text,
@@ -1132,7 +1197,7 @@ class PagAnimales extends StatelessWidget {
                       'prodgdo': produccion,
                       'estatusgdo': estatusgdo,
                       'observaciongdo': observacionController.text,
-                      'fotogdo': selectedImageBytes,
+                      'fotogdo': fotoFinal,
                     };
 
                     try {
@@ -1483,6 +1548,11 @@ class PagAnimales extends StatelessWidget {
 
                     String medicinasString = medicinasSeleccionadas.join(', ');
 
+                    Uint8List? archivoFinal =
+                        await ImageService.compressImageIfNeeded(
+                          selectedImageBytes,
+                        );
+
                     final nuevoRegistro = {
                       'areteanimal': animal['aretegdo'] ?? '',
                       'tipoanimal': 'adulto',
@@ -1492,7 +1562,7 @@ class PagAnimales extends StatelessWidget {
                       'medprev': medicinasString,
                       'fecharev': fechaRevisionController.text,
                       'observacionsalud': observacionesController.text,
-                      'archivo': selectedImageBytes,
+                      'archivo': archivoFinal,
                     };
 
                     try {
@@ -1560,13 +1630,7 @@ class PagAnimales extends StatelessWidget {
           child: selectedImageBytes != null
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.memory(
-                    selectedImageBytes,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildPlaceholderIcon();
-                    },
-                  ),
+                  child: ImageService.bytesToImage(selectedImageBytes),
                 )
               : _buildPlaceholderIcon(),
         ),
@@ -1860,14 +1924,15 @@ class PagAnimales extends StatelessWidget {
     String? corralSeleccionado = tganado['corralgdo']?.toString();
 
     Uint8List? selectedImageBytes;
-    String? existingImageBase64 = tganado['fotogdo']?.toString();
 
     List<String> corralesDisponibles = [];
     bool cargandoCorrales = true;
 
-    // Cargar imagen existente si hay una
-    if (existingImageBase64 != null && existingImageBase64.isNotEmpty) {
-      selectedImageBytes = ImageService.base64ToBytes(existingImageBase64);
+    final fotoData = tganado['fotogdo'];
+    if (fotoData is Uint8List) {
+      selectedImageBytes = fotoData;
+    } else if (fotoData is String) {
+      selectedImageBytes = ImageService.base64ToBytes(fotoData);
     }
 
     showDialog(
@@ -2122,6 +2187,11 @@ class PagAnimales extends StatelessWidget {
                       return;
                     }
 
+                    Uint8List? fotoFinal =
+                        await ImageService.compressImageIfNeeded(
+                          selectedImageBytes,
+                        );
+
                     final animalActualizado = {
                       'aretegdo': areteController.text,
                       'nombregdo': nombreController.text,
@@ -2133,7 +2203,7 @@ class PagAnimales extends StatelessWidget {
                       'prodgdo': produccionController.text,
                       'estatusgdo': estatusgdo,
                       'observaciongdo': observacionController.text,
-                      'fotogdo': selectedImageBytes,
+                      'fotogdo': fotoFinal,
                     };
 
                     try {
@@ -2247,7 +2317,15 @@ class AnimalDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagePath = animal['fotogdo']?.toString();
+    // MODIFICADO: Manejar tanto base64 como bytes
+    final fotoData = animal['fotogdo'];
+    Uint8List? imageBytes;
+
+    if (fotoData is Uint8List) {
+      imageBytes = fotoData;
+    } else if (fotoData is String) {
+      imageBytes = ImageService.base64ToBytes(fotoData);
+    }
 
     return Dialog(
       insetPadding: EdgeInsets.all(20),
@@ -2283,7 +2361,7 @@ class AnimalDetailsDialog extends StatelessWidget {
               SizedBox(height: 20),
 
               // Foto del animal
-              _buildPhotoSection(imagePath),
+              _buildPhotoSection(imageBytes),
 
               SizedBox(height: 20),
 
@@ -2309,9 +2387,9 @@ class AnimalDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildPhotoSection(String? imageBase64) {
+  Widget _buildPhotoSection(Uint8List? imageBytes) {
     return Center(
-      child: imageBase64 != null && imageBase64.isNotEmpty
+      child: imageBytes != null && imageBytes.isNotEmpty
           ? Container(
               width: 200,
               height: 200,
@@ -2327,7 +2405,7 @@ class AnimalDetailsDialog extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
-                child: ImageService.base64ToImage(imageBase64),
+                child: ImageService.bytesToImage(imageBytes),
               ),
             )
           : _buildPlaceholderPhoto(),
@@ -2523,7 +2601,15 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
     }
   }
 
-  void _showImageDialog(String imageBase64, String title) {
+  void _showImageDialog(dynamic imageData, String title) {
+    Uint8List? imageBytes;
+
+    if (imageData is Uint8List) {
+      imageBytes = imageData;
+    } else if (imageData is String) {
+      imageBytes = ImageService.base64ToBytes(imageData);
+    }
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -2541,11 +2627,11 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
                 ),
               ),
             ),
-            if (ImageService.isBase64ImageValid(imageBase64))
+            if (imageBytes != null && imageBytes.isNotEmpty)
               Container(
                 width: 300,
                 height: 300,
-                child: ImageService.base64ToImage(imageBase64),
+                child: ImageService.bytesToImage(imageBytes),
               )
             else
               Container(
@@ -2719,10 +2805,11 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
   }
 
   Widget _buildRegistroCard(Map<String, dynamic> registro, int index) {
+    final archivoData = registro['archivo'];
     final hasImage =
-        registro['archivo'] != null &&
-        registro['archivo'].toString().isNotEmpty &&
-        ImageService.isBase64ImageValid(registro['archivo'].toString());
+        archivoData != null &&
+        ((archivoData is Uint8List && archivoData.isNotEmpty) ||
+            (archivoData is String && archivoData.isNotEmpty));
 
     return Container(
       margin: EdgeInsets.only(bottom: 16),
@@ -2767,7 +2854,7 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
                     icon: Icon(Icons.photo_library, color: Colors.blue),
                     onPressed: () {
                       _showImageDialog(
-                        registro['archivo'].toString(),
+                        archivoData,
                         registro['procedimiento'] ?? 'Imagen del procedimiento',
                       );
                     },
