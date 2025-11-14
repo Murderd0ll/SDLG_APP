@@ -16,6 +16,8 @@ class _PagInicioState extends State<PagInicio> {
   int _totalBecerros = 0;
   int _totalMachos = 0;
   int _totalHembras = 0;
+  int _totalBeceMachos = 0;
+  int _totalBeceHembras = 0;
   bool _isLoading = true;
 
   @override
@@ -36,10 +38,13 @@ class _PagInicioState extends State<PagInicio> {
       final totalBecerros = await SQLHelper.getTotalBecerros();
 
       // Obtener distribución por sexo
-      final animalesPorSexo = await SQLHelper.getAnimalesPorSexo();
+      final animalesPorSexo = await SQLHelper.getAnimalesPorSexo(); //adultos
+      final becerrosPorSexo = await SQLHelper.getBecerrosPorSexo();
 
       int machos = 0;
       int hembras = 0;
+      int machosBecerros = 0;
+      int hembrasBecerros = 0;
 
       for (var item in animalesPorSexo) {
         if (item['sexogdo']?.toString().toLowerCase() == 'macho') {
@@ -49,11 +54,21 @@ class _PagInicioState extends State<PagInicio> {
         }
       }
 
+      for (var item in becerrosPorSexo) {
+        if (item['sexobece']?.toString().toLowerCase() == 'macho') {
+          machosBecerros = item['cantidad'] as int;
+        } else if (item['sexobece']?.toString().toLowerCase() == 'hembra') {
+          hembrasBecerros = item['cantidad'] as int;
+        }
+      }
+
       setState(() {
         _totalAnimales = totalAnimales;
         _totalBecerros = totalBecerros;
         _totalMachos = machos;
         _totalHembras = hembras;
+        _totalBeceMachos = machosBecerros;
+        _totalBeceHembras = hembrasBecerros;
         _isLoading = false;
       });
     } catch (e) {
@@ -147,7 +162,8 @@ class _PagInicioState extends State<PagInicio> {
                     children: [
                       _buildStatCard(
                         "Total de Ganado",
-                        _totalAnimales + _totalBecerros,
+                        _totalAnimales +
+                            _totalBecerros, //_totalAnimales es para los adultos, aqui se hace la suma para que sea el total general
                         FontAwesomeIcons.cow,
                         Colors.brown,
                       ),
@@ -159,13 +175,13 @@ class _PagInicioState extends State<PagInicio> {
                       ),
                       _buildStatCard(
                         "Machos",
-                        _totalMachos,
+                        _totalMachos + _totalBeceMachos,
                         Icons.male,
                         Colors.blue,
                       ),
                       _buildStatCard(
                         "Hembras",
-                        _totalHembras,
+                        _totalHembras + _totalBeceHembras,
                         Icons.female,
                         Colors.pink,
                       ),
@@ -191,17 +207,13 @@ class _PagInicioState extends State<PagInicio> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          _buildResumenItem(
-                            "Total de ganado:",
-                            _totalAnimales + _totalBecerros,
-                          ),
-                          _buildResumenItem(
-                            "Total de ganado adulto:",
-                            _totalAnimales,
-                          ),
-                          _buildResumenItem("Becerros:", _totalBecerros),
-                          _buildResumenItem("Machos adultos:", _totalMachos),
-                          _buildResumenItem("Hembras adultas:", _totalHembras),
+                          _buildResumenItem("Total de Ganado:",_totalAnimales + _totalBecerros,),
+                          _buildResumenItem("Total de Ganado adulto:", _totalAnimales),
+                          _buildResumenItem("   Machos", _totalMachos),
+                          _buildResumenItem("   Hembras", _totalHembras),
+                          _buildResumenItem("Total de Becerros:", _totalBecerros),
+                          _buildResumenItem("   Machos:",_totalBeceMachos,),
+                          _buildResumenItem("   Hembras:",_totalBeceHembras,),
                         ],
                       ),
                     ),

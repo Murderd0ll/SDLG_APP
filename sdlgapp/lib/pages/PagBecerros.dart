@@ -506,13 +506,17 @@ class PagBecerros extends StatelessWidget {
     final aretemadreController = TextEditingController();
     final observacionbeceController = TextEditingController();
 
+    Uint8List? selectedImageBytes;
     String? estatusbece;
     String? sexoSeleccionado;
-    String? corralSeleccionado;
-    Uint8List? selectedImageBytes;
 
+    String? corralSeleccionado;
     List<String> corralesDisponibles = [];
     bool cargandoCorrales = true;
+
+    String? areteMadreSeleccionado;
+    List<String> aretesHembras = [];
+    bool cargandoAretes = true;
 
     showDialog(
       context: context,
@@ -536,6 +540,25 @@ class PagBecerros extends StatelessWidget {
 
             if (cargandoCorrales) {
               _cargarCorrales();
+            }
+
+            Future<void> _cargarAretesHembras() async {
+              try {
+                final hembras = await SQLHelper.getAretesHembras();
+                setState(() {
+                  aretesHembras = hembras;
+                  cargandoAretes = false;
+                });
+              } catch (e) {
+                print("Error cargando aretes de hembras: $e");
+                setState(() {
+                  cargandoAretes = false;
+                });
+              }
+            }
+
+            if (cargandoAretes) {
+              _cargarAretesHembras();
             }
 
             return AlertDialog(
@@ -653,7 +676,6 @@ class PagBecerros extends StatelessWidget {
                           ),
                         ),
                         items: [
-                          // Opción para "Sin corral"
                           DropdownMenuItem(
                             value: null,
                             child: Text(
@@ -739,11 +761,54 @@ class PagBecerros extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: aretemadreController,
-                      decoration: InputDecoration(
-                        labelText: 'Arete de la Madre',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: areteMadreSeleccionado,
+                        decoration: InputDecoration(
+                          labelText: 'Arete de la Madre',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'Selecciona un arete',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                          // Opciones de corrales existentes
+                          ...aretesHembras.map((String aretemadre) {
+                            return DropdownMenuItem(
+                              value: aretemadre,
+                              child: Text(aretemadre),
+                            );
+                          }).toList(),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            areteMadreSeleccionado = newValue;
+                          });
+                        },
+                        hint: cargandoAretes
+                            ? Row(
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Cargando aretes...'),
+                                ],
+                              )
+                            : Text('Selecciona un arete'),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -808,7 +873,7 @@ class PagBecerros extends StatelessWidget {
                       'nacimientobece': nacimientobeceController.text,
                       'corralbece': corralSeleccionado ?? '',
                       'estatusbece': estatusbece,
-                      'aretemadre': aretemadreController.text,
+                      'aretemadre': areteMadreSeleccionado ?? '',
                       'observacionbece': observacionbeceController.text,
                       'fotobece': fotoFinal, // Enviar directamente como bytes
                     };
@@ -988,7 +1053,9 @@ class PagBecerros extends StatelessWidget {
     BuildContext context,
     Map<String, dynamic> tbecerros,
   ) {
-    final veterinarioController = TextEditingController();
+    var veterinarioController = TextEditingController(
+      text: 'Jorge Vidal Varela Rios',
+    );
     final procedimientoController = TextEditingController();
     final fechaRevisionController = TextEditingController();
     final observacionesController = TextEditingController();
@@ -1045,9 +1112,19 @@ class PagBecerros extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 16),
+                    _buildImageSelectorForHealthBytes(
+                      setState,
+                      selectedImageBytes,
+                      (Uint8List? newImageBytes) {
+                        selectedImageBytes = newImageBytes;
+                      },
+                      dialogContext,
+                    ),
+                    SizedBox(height: 20),
 
                     TextField(
                       controller: veterinarioController,
+
                       decoration: InputDecoration(
                         labelText: 'Nombre del Veterinario',
                         border: OutlineInputBorder(),
@@ -1130,16 +1207,6 @@ class PagBecerros extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 12),
-
-                    // Selector de imagen adaptado para salud
-                    _buildImageSelectorForHealthBytes(
-                      setState,
-                      selectedImageBytes,
-                      (Uint8List? newImageBytes) {
-                        selectedImageBytes = newImageBytes;
-                      },
-                      dialogContext,
-                    ),
                   ],
                 ),
               ),
@@ -1224,14 +1291,15 @@ class PagBecerros extends StatelessWidget {
         // Título de la imagen
         Container(
           width: double.infinity,
-          padding: EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.only(bottom: 12),
           child: Text(
-            'Imagen del Registro de Salud',
+            'Imagen del registro de salud',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color.fromARGB(255, 137, 77, 77),
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
             ),
+            textAlign: TextAlign.center,
           ),
         ),
 
@@ -1528,17 +1596,9 @@ class PagBecerros extends StatelessWidget {
     final nacimientobeceController = TextEditingController(
       text: tbecerros['nacimientobece']?.toString() ?? '',
     );
-    final aretemadreController = TextEditingController(
-      text: tbecerros['aretemadre']?.toString() ?? '',
-    );
     final observacionbeceController = TextEditingController(
       text: tbecerros['observacionbece']?.toString() ?? '',
     );
-
-    String? estatusbece = tbecerros['estatusbece']?.toString();
-    String? sexoSeleccionado = tbecerros['sexobece']?.toString();
-    String? corralSeleccionado = tbecerros['corralbece']?.toString();
-
     Uint8List? selectedImageBytes;
 
     final fotoData = tbecerros['fotobece'];
@@ -1547,9 +1607,14 @@ class PagBecerros extends StatelessWidget {
     } else if (fotoData is String) {
       selectedImageBytes = ImageService.base64ToBytes(fotoData);
     }
-
+    String? estatusbece = tbecerros['estatusbece']?.toString();
+    String? sexoSeleccionado = tbecerros['sexobece']?.toString();
+    String? corralSeleccionado = tbecerros['corralbece']?.toString();
     List<String> corralesDisponibles = [];
     bool cargandoCorrales = true;
+    String? areteMadreSeleccionado = tbecerros['aretemadre']?.toString();
+    List<String> aretesHembras = [];
+    bool cargandoAretes = true;
 
     showDialog(
       context: context,
@@ -1573,6 +1638,25 @@ class PagBecerros extends StatelessWidget {
 
             if (cargandoCorrales) {
               _cargarCorrales();
+            }
+
+            Future<void> _cargarAretesHembras() async {
+              try {
+                final hembras = await SQLHelper.getAretesHembras();
+                setState(() {
+                  aretesHembras = hembras;
+                  cargandoAretes = false;
+                });
+              } catch (e) {
+                print("Error cargando aretes de hembras: $e");
+                setState(() {
+                  cargandoAretes = false;
+                });
+              }
+            }
+
+            if (cargandoAretes) {
+              _cargarAretesHembras();
             }
             return AlertDialog(
               title: Text("Editar Becerro"),
@@ -1775,11 +1859,56 @@ class PagBecerros extends StatelessWidget {
                     ),
                     SizedBox(height: 12),
 
-                    TextField(
-                      controller: aretemadreController,
-                      decoration: InputDecoration(
-                        labelText: 'Arete de la Madre',
-                        border: OutlineInputBorder(),
+                    Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        value: _validarValorAreteMadre(
+                          areteMadreSeleccionado,
+                          aretesHembras,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Arete de la Madre',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'Selecciona un arete',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                          ...aretesHembras.map((String arete) {
+                            return DropdownMenuItem(
+                              value: arete,
+                              child: Text(arete),
+                            );
+                          }).toList(),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            areteMadreSeleccionado = newValue;
+                          });
+                        },
+                        hint: cargandoCorrales
+                            ? Row(
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Cargando aretes...'),
+                                ],
+                              )
+                            : Text('Selecciona un arete'),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -1816,7 +1945,7 @@ class PagBecerros extends StatelessWidget {
                       'nacimientobece': nacimientobeceController.text,
                       'corralbece': corralSeleccionado ?? '',
                       'estatusbece': estatusbece,
-                      'aretemadre': aretemadreController.text,
+                      'aretemadre': areteMadreSeleccionado ?? '',
                       'observacionbece': observacionbeceController.text,
                       'fotobece': fotoFinal, // Enviar como bytes
                     };
@@ -1873,6 +2002,29 @@ class PagBecerros extends StatelessWidget {
     // Si no se encuentra, retornar null para evitar el error
     print(
       'Valor de corral no encontrado: "$valor". Corrales disponibles: $corralesDisponibles',
+    );
+    return null;
+  }
+
+  String? _validarValorAreteMadre(String? valor, List<String> aretesHembras) {
+    if (valor == null) return null;
+
+    // Verificar si el valor existe exactamente en la lista
+    if (aretesHembras.contains(valor)) {
+      return valor;
+    }
+
+    // Buscar coincidencias ignorando case sensitivity
+    final valorLower = valor.toLowerCase();
+    for (final arete in aretesHembras) {
+      if (arete.toLowerCase() == valorLower) {
+        return arete; // devuelve el valor correcto de la lista
+      }
+    }
+
+    // Si no se encuentra, retornar null para evitar el error
+    print(
+      'Valor de arete no encontrado: "$valor". Aretes disponibles: $aretesHembras',
     );
     return null;
   }

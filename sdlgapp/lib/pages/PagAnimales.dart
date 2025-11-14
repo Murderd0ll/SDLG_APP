@@ -316,6 +316,12 @@ class PagAnimales extends StatelessWidget {
 
             if (tganado['razagdo'] != null) Text('Raza: ${tganado['razagdo']}'),
 
+            if (tganado['corralgdo'] != null)
+              Text('Corral: ${tganado['corralgdo']}'),
+
+            if (tganado['prodgdo'] != null)
+              Text('Producción: ${tganado['prodgdo']}'),
+
             if (tganado['estatusgdo'] != null)
               Text('Estatus: ${tganado['estatusgdo']}'),
 
@@ -1372,7 +1378,9 @@ class PagAnimales extends StatelessWidget {
     BuildContext context,
     Map<String, dynamic> animal,
   ) {
-    final veterinarioController = TextEditingController();
+    var veterinarioController = TextEditingController(
+      text: 'Jorge Vidal Varela Rios',
+    );
     final procedimientoController = TextEditingController();
     final fechaRevisionController = TextEditingController();
     final observacionesController = TextEditingController();
@@ -1429,6 +1437,16 @@ class PagAnimales extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 16),
+
+                    _buildImageSelectorForHealthBytes(
+                      setState,
+                      selectedImageBytes,
+                      (Uint8List? newImageBytes) {
+                        selectedImageBytes = newImageBytes;
+                      },
+                      dialogContext,
+                    ),
+                    SizedBox(height: 20),
 
                     TextField(
                       controller: veterinarioController,
@@ -1514,15 +1532,6 @@ class PagAnimales extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 12),
-
-                    _buildImageSelectorForHealthBytes(
-                      setState,
-                      selectedImageBytes,
-                      (Uint8List? newImageBytes) {
-                        selectedImageBytes = newImageBytes;
-                      },
-                      dialogContext,
-                    ),
                   ],
                 ),
               ),
@@ -1607,14 +1616,15 @@ class PagAnimales extends StatelessWidget {
         // Título de la imagen
         Container(
           width: double.infinity,
-          padding: EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.only(bottom: 12),
           child: Text(
-            'Imagen del Registro de Salud',
+            'Imagen del registro de salud',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color.fromARGB(255, 137, 77, 77),
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
             ),
+            textAlign: TextAlign.center,
           ),
         ),
 

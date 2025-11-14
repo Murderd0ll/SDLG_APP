@@ -472,6 +472,19 @@ class SQLHelper {
     }
   }
 
+  //Método para obtener los aretes de las hembras adultas, sirve para que al agregar un becerro
+  static Future<List<String>> getAretesHembras() async {
+    final db = await SQLHelper.db();
+    final result = await db.query(
+      'tganado',
+      columns: ['aretegdo'],
+      where: 'sexogdo = ? AND estatusgdo = ?',
+      whereArgs: ['Hembra', 'Activo'],
+    );
+
+    return result.map((map) => map['aretegdo'] as String).toList();
+  }
+
   // Este es el método para resetear la base de datos, este sirve para estar haciendo pruebas cuando cambias datos o así de q necesites
   // estar borrando la bdd y volver a crearla de 0, pero si ya no lo ocupas lo quitas en el main.dart
   // (es en la linea 57 mas o menos xD dice algo como await SQLHelper.resetDatabase(); , a ese nomás lo comentas y
@@ -1285,7 +1298,7 @@ class SQLHelper {
   }
 
   // ************* Métodos de análisis adicionales *************
-  //este es para obtener los datos y agruparlos por cantidad de animales por sexo
+  //este es para obtener los datos y agruparlos por cantidad de animales adultos por sexo
   static Future<List<Map<String, dynamic>>> getAnimalesPorSexo() async {
     final db = await SQLHelper.db();
     try {
@@ -1302,37 +1315,19 @@ class SQLHelper {
     }
   }
 
-  //este es para obtener los datos y agruparlos por cantidad de animales por raza
-  static Future<List<Map<String, dynamic>>> getAnimalesPorRaza() async {
+  //este es para obtener los datos y agruparlos por cantidad de animales adultos por sexo
+  static Future<List<Map<String, dynamic>>> getBecerrosPorSexo() async {
     final db = await SQLHelper.db();
     try {
       final result = await db.rawQuery('''
-        SELECT razagdo, COUNT(*) as cantidad 
-        FROM tganado 
-        WHERE razagdo IS NOT NULL AND razagdo != '' 
-        GROUP BY razagdo
-        ORDER BY cantidad DESC
+        SELECT sexobece, COUNT(*) as cantidad 
+        FROM tbecerros 
+        WHERE sexobece IS NOT NULL AND sexobece != '' 
+        GROUP BY sexobece
       ''');
       return result;
     } catch (e) {
-      print("Error obteniendo animales por raza: $e");
-      return [];
-    }
-  }
-
-  //este es para obtener los datos y agruparlos por cantidad de animales por estatus
-  static Future<List<Map<String, dynamic>>> getAnimalesPorEstatus() async {
-    final db = await SQLHelper.db();
-    try {
-      final result = await db.rawQuery('''
-        SELECT estatusgdo, COUNT(*) as cantidad 
-        FROM tganado 
-        WHERE estatusgdo IS NOT NULL AND estatusgdo != '' 
-        GROUP BY estatusgdo
-      ''');
-      return result;
-    } catch (e) {
-      print("Error obteniendo animales por estatus: $e");
+      print("Error obteniendo animales por sexo: $e");
       return [];
     }
   }
