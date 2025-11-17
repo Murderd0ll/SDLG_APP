@@ -351,6 +351,19 @@ class SQLHelper {
       )""");
       print("Tabla 'tcorral' creada/verificada");
 
+      //****************** tabla de bitacora**************
+      await database.execute("""CREATE TABLE IF NOT EXISTS tbitacora(
+        idbitacora INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+        usuario TEXT,
+        modulo TEXT,
+        accion TEXT,
+        descripcion TEXT,
+        detalles TEXT,
+        arete_afectado TEXT
+      )""");
+      print("Tabla 'tbitacora' creada/verificada");
+
       // ************* Tabla de usuarios ************* este es para el log in, no se crearán desde aquí
       //los datos se deben jalar desde la PC y mandarse al telefono para q los valide
       await database.execute("""CREATE TABLE IF NOT EXISTS tusuarios(

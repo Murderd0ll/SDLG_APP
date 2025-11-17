@@ -10,6 +10,7 @@ import 'package:sdlgapp/pages/PagCorrales.dart';
 import 'package:sdlgapp/pages/PagInicio.dart';
 import 'package:sdlgapp/pages/PagPropietarios.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
+import 'package:sdlgapp/pages/importar_bdd.dart';
 import 'package:sdlgapp/pages/login_page.dart';
 import 'package:sdlgapp/pages/splash_screen.dart';
 
@@ -24,7 +25,7 @@ class SDLGAPP extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      //theme: ThemeData(primarySwatch: Colors.blue),
       title: "SDLG",
       home: SplashScreen(),
     );
@@ -338,6 +339,26 @@ class _InicioState extends State<Inicio> {
               leading: Icon(Icons.fence),
               title: const Text('Corrales'),
               onTap: () => _cambiarPaginaDesdeDrawer(4),
+            ),
+            const Divider(color: Colors.white70),
+            ListTile(
+              iconColor: Colors.white,
+              textColor: Colors.white,
+              leading: Icon(Icons.import_export),
+              title: Text('Importar Base de Datos'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ImportDatabasePage(
+                      onDatabaseUpdated: () {
+                        // Actualizar el estado de tu app si es necesario
+                        // Por ejemplo, forzar refresh de datos
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
             const Divider(color: Colors.white70),
             ListTile(

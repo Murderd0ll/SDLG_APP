@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
       await SQLHelper.debugDatabaseLocation();
 
       // ***********SOLO EJECUTAR ESTO UNA VEZ - LUEGO COMENTAR**********
-      //await SQLHelper.resetDatabase();
+      //await SQLHelper.resetDatabase(); //ESTA ES PARA REINICIAR TODA LA BDD, SOLO SE EJECUTA 1 VEZ Y LUEGO SE COMENTA
       // ****************COMENTAR ESTA LÍNEA DESPUÉS DE LA PRIMERA EJECUCIÓN*********************************
 
       print("=== BASE DE DATOS REINICIADA ===");
