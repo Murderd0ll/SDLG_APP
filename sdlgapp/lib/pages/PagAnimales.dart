@@ -2685,7 +2685,7 @@ class _HealthHistoryDialogState extends State<HealthHistoryDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Historial de Salud - ${widget.animal['nombregdo']}',
+                    'Historial de Salud\nde ${widget.animal['nombregdo']}',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,

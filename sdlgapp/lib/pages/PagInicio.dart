@@ -207,13 +207,22 @@ class _PagInicioState extends State<PagInicio> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          _buildResumenItem("Total de Ganado:",_totalAnimales + _totalBecerros,),
-                          _buildResumenItem("Total de Ganado adulto:", _totalAnimales),
+                          _buildResumenItem(
+                            "Total de Ganado:",
+                            _totalAnimales + _totalBecerros,
+                          ),
+                          _buildResumenItem(
+                            "Total de Ganado adulto:",
+                            _totalAnimales,
+                          ),
                           _buildResumenItem("   Machos", _totalMachos),
                           _buildResumenItem("   Hembras", _totalHembras),
-                          _buildResumenItem("Total de Becerros:", _totalBecerros),
-                          _buildResumenItem("   Machos:",_totalBeceMachos,),
-                          _buildResumenItem("   Hembras:",_totalBeceHembras,),
+                          _buildResumenItem(
+                            "Total de Becerros:",
+                            _totalBecerros,
+                          ),
+                          _buildResumenItem("   Machos:", _totalBeceMachos),
+                          _buildResumenItem("   Hembras:", _totalBeceHembras),
                         ],
                       ),
                     ),
@@ -226,14 +235,6 @@ class _PagInicioState extends State<PagInicio> {
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          const SizedBox(width: 10),
-          FloatingActionButton(
-            onPressed: () {
-              SQLHelper.exportRealDatabase();
-            },
-            tooltip: 'Exportar BD Real',
-            child: const Icon(Icons.verified_user),
-          ),
           const SizedBox(width: 10),
           FloatingActionButton(
             onPressed: _cargarEstadisticas,

@@ -10,7 +10,7 @@ import 'package:sdlgapp/pages/PagCorrales.dart';
 import 'package:sdlgapp/pages/PagInicio.dart';
 import 'package:sdlgapp/pages/PagPropietarios.dart';
 import 'package:sdlgapp/pages/db_helper.dart';
-import 'package:sdlgapp/pages/importar_bdd.dart';
+import 'package:sdlgapp/pages/opciones_bdd.dart';
 import 'package:sdlgapp/pages/login_page.dart';
 import 'package:sdlgapp/pages/splash_screen.dart';
 
@@ -345,7 +345,7 @@ class _InicioState extends State<Inicio> {
               iconColor: Colors.white,
               textColor: Colors.white,
               leading: Icon(Icons.import_export),
-              title: Text('Importar Base de Datos'),
+              title: Text('Opciones de Base de Datos'),
               onTap: () {
                 Navigator.push(
                   context,

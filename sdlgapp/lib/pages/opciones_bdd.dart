@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sdlgapp/pages/db_helper.dart';
 import 'package:sdlgapp/services/database_import_service.dart';
 
 class ImportDatabasePage extends StatefulWidget {
@@ -297,15 +298,65 @@ class _ImportDatabasePageState extends State<ImportDatabasePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Fusionar Base de Datos'),
+        title: Text('Opciones de Base de Datos'),
         backgroundColor: const Color.fromARGB(255, 27, 26, 34),
         foregroundColor: Colors.white,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Card(
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 10),
+                    Text(
+                      'Exportar Base de Datos',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Esta función le permite exportar una copia de seguridad completa de la base de datos actual.',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Formato de archivo: .db',
+                      style: TextStyle(
+                        color: const Color.fromARGB(255, 0, 0, 0),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 30),
+            // Botón de importación
+            Center(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  SQLHelper.exportRealDatabase();
+                },
+                icon: Icon(Icons.outbox_outlined),
+                label: Text('Exportar Base de Datos'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  backgroundColor: const Color.fromARGB(255, 63, 167, 181),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+
+            SizedBox(height: 20),
             // Información
             Card(
               elevation: 3,
@@ -427,7 +478,7 @@ class _ImportDatabasePageState extends State<ImportDatabasePage> {
                           Icon(Icons.warning, color: Colors.orange[800]),
                           SizedBox(width: 8),
                           Text(
-                            'Antes de continuar:',
+                            'Antes de continuar con la fusión:',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: const Color.fromARGB(255, 0, 0, 0),
