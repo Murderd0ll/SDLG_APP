@@ -456,7 +456,7 @@ class PagAnimales extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Reproducción - ${animal['areteanimal']}',
+              'Reproducción - ${animal['aretegdo']}',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
